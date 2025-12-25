@@ -1,0 +1,97 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  password          String
+  name              String
+  avatarUrl         String?
+  originalAvatarUrl String?
+  createdAt         DateTime           @default(now())
+  isVerified        Boolean            @default(false)
+  verificationToken String?
+  dailyInformation  DailyInformation[]
+  following         Follow[]           @relation("follower")
+  followers         Follow[]           @relation("following")
+  profile           Profile?
+  workouts          Workout[]
+}
+
+model Workout {
+  id        String      @id @default(cuid())
+  userId    String
+  createdAt DateTime    @default(now())
+  distance  Float?
+  duration  Int
+  date      DateTime
+  zone1Min  Int         @default(0)
+  zone2Min  Int         @default(0)
+  zone3Min  Int         @default(0)
+  zone4Min  Int         @default(0)
+  zone5Min  Int         @default(0)
+  type      WorkoutType
+  name      String
+  comment   String?
+  effort    Int?
+  feeling   Int?
+  updatedAt DateTime?   @updatedAt
+  user      User        @relation(fields: [userId], references: [id])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  following   User     @relation("following", fields: [followingId], references: [id])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  fullName    String
+  bio         String?
+  createdAt   DateTime @default(now())
+  gender      String?  @default("Мужчина")
+  sportType   String?  @default("Лыжные гонки")
+  club        String?  @default("Не указан")
+  association String?  @default("ФЛГР")
+  hrZones     Json?    @default("{\"I1\": \"118-143\", \"I2\": \"143-161\", \"I3\": \"161-171\", \"I4\": \"171-181\", \"I5\": \"181-200\"}")
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model DailyInformation {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  date           DateTime
+  main_param     String?
+  physical       Int      @default(0)
+  mental         Int      @default(0)
+  sleep_quality  Int      @default(0)
+  pulse          Int?
+  sleep_duration String?
+  comment        String?
+  created_at     DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_daily_user")
+}
+
+enum WorkoutType {
+  Running
+  XC_Skiing_Classic
+  XC_Skiing_Skate
+  RollerSki_Classic
+  StrengthTraining
+  Other
+  Bike
+  RollerSki_Skate
+}
