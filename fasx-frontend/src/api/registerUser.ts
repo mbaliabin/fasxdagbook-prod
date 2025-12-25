@@ -1,5 +1,6 @@
 export async function registerUser(name: string, email: string, password: string) {
-  const res = await fetch("http://87.249.50.183:5000/api/auth/register", {
+  // Заменяем http://87.249.50.183:5000/api на переменную из .env
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
@@ -13,4 +14,3 @@ export async function registerUser(name: string, email: string, password: string
 
   return data;
 }
-

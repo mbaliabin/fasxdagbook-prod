@@ -1,5 +1,5 @@
 export async function loginUser(email: string, password: string) {
-  const res = await fetch("http://87.249.50.183:5000/api/auth/login", {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),

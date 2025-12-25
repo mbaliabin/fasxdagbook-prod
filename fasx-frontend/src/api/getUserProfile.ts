@@ -4,7 +4,10 @@ export async function getUserProfile() {
     throw new Error("Нет токена в localStorage")
   }
 
-  const res = await fetch(`http://87.249.50.183:5000/api/profile`, {
+  // Используем переменную окружения вместо жесткого IP
+  const apiUrl = import.meta.env.VITE_API_URL || "http://fasx.pro/api";
+
+  const res = await fetch(`${apiUrl}/profile`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
