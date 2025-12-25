@@ -8,8 +8,7 @@ services:
       POSTGRES_USER: fasx_user
       POSTGRES_PASSWORD: 199510Ma%
       POSTGRES_DB: fasx
-    ports:
-      - "5433:5433"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
 
