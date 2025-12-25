@@ -4,7 +4,7 @@ export async function getUserProfile() {
     throw new Error("Нет токена в localStorage")
   }
 
-  const res = await fetch(`http://localhost:5000/api/profile`, {
+  const res = await fetch(`http://87.249.50.183:5000/api/profile`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
