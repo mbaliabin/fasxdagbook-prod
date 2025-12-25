@@ -9,4 +9,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+      allowedHosts: ['fasx.pro'],
+      host: true,
+      port: 5173,
+      strictPort: true,
+    },
 })
