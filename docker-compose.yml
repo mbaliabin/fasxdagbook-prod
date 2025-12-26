@@ -37,7 +37,7 @@ services:
     container_name: dagbook-frontend
     restart: always
     ports:
-      - "8080:80"  # Поменяли на 8080, чтобы не путать с 5173
+      - "5173:80"  # Поменяли на 8080, чтобы не путать с 5173
     # volumes:      # УДАЛИ ИЛИ ЗАКОММЕНТИРУЙ ЭТИ ДВЕ СТРОКИ
     #  - ./fasx-frontend:/app
     depends_on:
