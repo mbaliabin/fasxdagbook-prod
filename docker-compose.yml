@@ -21,13 +21,12 @@ services:
       - "5000:5000"
     env_file:
       - ./fasx-backend/.env
+    # Мы убрали DATABASE_URL отсюда, теперь он будет браться ТОЛЬКО из .env
     environment:
-
-    # Добавляем вот эти строки:
+      NODE_ENV: production
     volumes:
       - ./fasx-backend:/app
       - /app/node_modules
-    # Команда запуска (чтобы точно использовался nodemon)
     command: npm run dev
     depends_on:
       - db
