@@ -7,7 +7,7 @@ import {
   Sun, Award, Settings, LogOut, ChevronLeft, ChevronRight,
   Timer, BarChart3, ClipboardList, CalendarDays, CheckCircle2, Activity
 } from "lucide-react";
-import { getUserProfile } from "../api/getUserProfile";
+import { getUserProfile } from "../getUserProfile";
 import toast, { Toaster } from "react-hot-toast";
 
 dayjs.locale("ru");
