@@ -46,4 +46,4 @@ services:
       - backend
 
 volumes:
-  pgdata
+  pgdata:
