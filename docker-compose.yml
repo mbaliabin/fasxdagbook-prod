@@ -22,7 +22,7 @@ services:
     env_file:
       - ./fasx-backend/.env
     environment:
-      DATABASE_URL: "postgresql://fasx_user:199510Ma%@db:5433/dagbook_db"
+
     # Добавляем вот эти строки:
     volumes:
       - ./fasx-backend:/app
@@ -47,4 +47,4 @@ services:
       - backend
 
 volumes:
-  pgdata:
+  pgdata
