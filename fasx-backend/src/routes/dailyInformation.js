@@ -103,4 +103,22 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/daily-information/user — получить ВСЕ записи пользователя
+router.get("/user", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const entries = await prisma.dailyInformation.findMany({
+      where: { userId },
+      orderBy: { date: 'desc' }
+    });
+
+    res.json(entries);
+  } catch (err) {
+    console.error("Error fetching all daily information:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

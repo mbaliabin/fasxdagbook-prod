@@ -206,3 +206,29 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Стилизация скроллбара для таблиц */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #2563eb; /* синий цвет из Tailwind (blue-600) */
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Устанавливаем цвет фона для всего окна браузера */
+html, body {
+  background-color: #09090b; /* Твой цвет фона из PlanningPage */
+  /* Убираем "резиновый" эффект только по горизонтали, чтобы не ломать свайп назад в браузере */
+  overscroll-behavior-x: none;
+}

@@ -9,6 +9,8 @@ import FasxRegister from "@/pages/FasxRegister"
 import DailyParametersWrapper from "@/pages/DailyParametersWrapper"
 import StatisticsPageWrapper from "@/pages/StatisticsPageWrapper"
 import AccountPageWrapper from "@/pages/AccountPageWrapper"
+import PlanningPage from "@/pages/PlanningPage"
+import PlanningComplianceTest from "./pages/PlanningComplianceTest"
 
 
 export default function App() {
@@ -25,6 +27,8 @@ export default function App() {
       <Route path="/daily" element={<DailyParametersWrapper />} />
       <Route path="/statistics" element={<StatisticsPageWrapper />} />
       <Route path="/account" element={<AccountPageWrapper />} />
+      <Route path="/planning" element={<PlanningPage />} />
+      <Route path="/plan" element={<PlanningComplianceTest />} />
     </Routes>
   )
 }

@@ -5,7 +5,7 @@ import "dayjs/locale/ru";
 import {
   User, Brain, Moon, AlertTriangle, Thermometer, Send, Clock,
   Sun, Award, ChevronLeft, ChevronRight,
-  Timer, BarChart3, ClipboardList, CalendarDays, CheckCircle2, Activity, Edit3
+  Timer, BarChart3, ClipboardList, CalendarDays, CheckCircle2, Activity, Edit3, Mountain
 } from "lucide-react";
 import { getUserProfile } from "../api/getUserProfile";
 import toast, { Toaster } from "react-hot-toast";
@@ -36,10 +36,12 @@ const ColorRangeScale = ({ value, onChange, label, Icon }: { value: number; onCh
   );
 };
 
-const StatusChip = ({ id, label, Icon, activeId, onClick, activeColor }: any) => {
-  const isActive = activeId === id;
+const StatusChip = ({ id, label, Icon, isActive, onClick, activeColor }: any) => {
   return (
-    <button onClick={() => onClick(id === activeId ? null : id)} className={`flex-1 flex flex-col items-center gap-1 py-2 px-0.5 rounded-lg border transition-all ${isActive ? `${activeColor} border-transparent shadow-lg scale-[0.95]` : "bg-[#131316] border-white/[0.03] text-gray-600"}`}>
+    <button
+      onClick={() => onClick(id)}
+      className={`flex-1 flex flex-col items-center gap-1 py-2 px-0.5 rounded-lg border transition-all ${isActive ? `${activeColor} border-transparent shadow-lg scale-[0.95]` : "bg-[#131316] border-white/[0.03] text-gray-600"}`}
+    >
       <Icon size={12} className={isActive ? "text-white" : "text-gray-600"} />
       <span className="text-[7px] font-black uppercase tracking-tighter leading-none text-center whitespace-nowrap">{label}</span>
     </button>
@@ -54,7 +56,7 @@ export default function DailyParametersMobile() {
   const [name, setName] = useState("");
   const [profile, setProfile] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState(dayjs());
-  const [mainParam, setMainParam] = useState<string | null>(null);
+  const [mainParam, setMainParam] = useState<string[]>([]); // Массив для нескольких статусов
   const [physical, setPhysical] = useState(0);
   const [mental, setMental] = useState(0);
   const [sleepQuality, setSleepQuality] = useState(0);
@@ -85,11 +87,12 @@ export default function DailyParametersMobile() {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) {
-          setMainParam(null); setPhysical(0); setMental(0); setSleepQuality(0); setPulse(""); setSleepHours("08"); setSleepMinutes("00"); setComment("");
+          setMainParam([]); setPhysical(0); setMental(0); setSleepQuality(0); setPulse(""); setSleepHours("08"); setSleepMinutes("00"); setComment("");
           return;
         }
         const data = await res.json();
-        setMainParam(data.main_param || null);
+        // Превращаем строку из БД обратно в массив
+        setMainParam(data.main_param ? data.main_param.split(',') : []);
         setPhysical(Number(data.physical) || 0);
         setMental(Number(data.mental) || 0);
         setSleepQuality(Number(data.sleep_quality) || 0);
@@ -104,6 +107,12 @@ export default function DailyParametersMobile() {
     };
     fetchDailyInfo();
   }, [selectedDate, API_URL]);
+
+  const toggleStatus = (id: string) => {
+    setMainParam(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
 
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, "").slice(0, 2);
@@ -127,7 +136,8 @@ export default function DailyParametersMobile() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           date: selectedDate.format("YYYY-MM-DD"),
-          mainParam, physical, mental, sleepQuality,
+          mainParam: mainParam.join(','), // Отправляем как строку через запятую
+          physical, mental, sleepQuality,
           pulse: pulse ? Number(pulse) : null,
           sleepDuration: `${sleepHours.padStart(2, '0')}:${sleepMinutes.padStart(2, '0')}`,
           comment: comment || null,
@@ -194,11 +204,12 @@ export default function DailyParametersMobile() {
         <div className="space-y-1.5">
           <h2 className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-700 ml-1">Статус дня</h2>
           <div className="flex w-full gap-1">
-            <StatusChip id="skadet" label="Травма" Icon={AlertTriangle} activeId={mainParam} onClick={setMainParam} activeColor="bg-red-600" />
-            <StatusChip id="syk" label="Болезнь" Icon={Thermometer} activeId={mainParam} onClick={setMainParam} activeColor="bg-orange-600" />
-            <StatusChip id="paReise" label="Путь" Icon={Send} activeId={mainParam} onClick={setMainParam} activeColor="bg-blue-600" />
-            <StatusChip id="fridag" label="Отдых" Icon={Sun} activeId={mainParam} onClick={setMainParam} activeColor="bg-green-600" />
-            <StatusChip id="konkurranse" label="Старт" Icon={Award} activeId={mainParam} onClick={setMainParam} activeColor="bg-yellow-600" />
+            <StatusChip id="skadet" label="Травма" Icon={AlertTriangle} isActive={mainParam.includes("skadet")} onClick={toggleStatus} activeColor="bg-red-600" />
+            <StatusChip id="syk" label="Болезнь" Icon={Thermometer} isActive={mainParam.includes("syk")} onClick={toggleStatus} activeColor="bg-orange-600" />
+            <StatusChip id="hoyde" label="Высота" Icon={Mountain} isActive={mainParam.includes("hoyde")} onClick={toggleStatus} activeColor="bg-cyan-600" />
+            <StatusChip id="paReise" label="Путь" Icon={Send} isActive={mainParam.includes("paReise")} onClick={toggleStatus} activeColor="bg-blue-600" />
+            <StatusChip id="fridag" label="Отдых" Icon={Sun} isActive={mainParam.includes("fridag")} onClick={toggleStatus} activeColor="bg-green-600" />
+            <StatusChip id="konkurranse" label="Старт" Icon={Award} isActive={mainParam.includes("konkurranse")} onClick={toggleStatus} activeColor="bg-yellow-600" />
           </div>
         </div>
 
@@ -228,7 +239,6 @@ export default function DailyParametersMobile() {
             <Edit3 size={10} className="absolute right-3 bottom-3 text-gray-800" />
           </div>
 
-          {/* КОМПАКТНАЯ СЕРАЯ КНОПКА */}
           <div className="flex justify-center pt-2">
             <button
               onClick={handleSave}
@@ -241,6 +251,7 @@ export default function DailyParametersMobile() {
         </div>
       </div>
 
+      {/* НИЖНЕЕ МЕНЮ */}
       <div className="fixed bottom-4 left-4 right-4 z-50">
         <div className="bg-[#131316]/95 backdrop-blur-md border border-white/10 p-1 rounded-xl flex justify-around shadow-2xl">
           {menuItems.map((item) => {

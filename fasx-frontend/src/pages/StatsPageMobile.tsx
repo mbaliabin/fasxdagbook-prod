@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import dayjs from "dayjs";
 import weekOfYear from "dayjs/plugin/weekOfYear";
@@ -39,9 +39,13 @@ const MOVEMENT_TYPE_MAP: Record<string, string> = {
 const NON_DISTANCE_TYPES = ["Сила", "ОФП", "Растяжка", "Йога", "Другое"];
 
 const STATUS_PARAMS = [
-    { id: 'skadet', label: 'Травма' }, { id: 'syk', label: 'Болезнь' },
-    { id: 'paReise', label: 'В пути' }, { id: 'hoydedogn', label: 'Смена пояса' },
-    { id: 'fridag', label: 'Выходной' }, { id: 'konkurranse', label: 'Старт' },
+    { id: 'skadet', label: 'Травма' },
+    { id: 'syk', label: 'Болезнь' },
+    { id: 'hoyde', label: 'Высота' },
+    { id: 'paReise', label: 'В пути' },
+    { id: 'hoydedogn', label: 'Смена пояса' },
+    { id: 'fridag', label: 'Выходной' },
+    { id: 'konkurranse', label: 'Старт' },
 ];
 
 const REPORT_TYPES = [
@@ -108,9 +112,8 @@ export default function StatsPageMobile() {
       );
 
       const dur = filtered.reduce((s: number, w: any) => s + (w.duration || 0), 0);
-
-      // ИТОГО В КАРТОЧКАХ: Один знак, если нужно. Например 1631.4 или 1631
       const totalDist = filtered.reduce((s: number, w: any) => s + (w.distance || 0), 0);
+
       setTotals({
         trainingDays: new Set(filtered.map((w: any) => dayjs(w.date).format("YYYY-MM-DD"))).size,
         sessions: filtered.length,
@@ -142,7 +145,6 @@ export default function StatsPageMobile() {
       });
       setEnduranceZones(zonesData);
 
-      // --- ТАБЛИЦА ДИСТАНЦИИ: Округление до 1 знака без нулей ---
       const distData = Object.keys(MOVEMENT_TYPE_MAP)
         .filter(t => !NON_DISTANCE_TYPES.includes(MOVEMENT_TYPE_MAP[t]))
         .map(t => {
@@ -156,7 +158,6 @@ export default function StatsPageMobile() {
           const rowSum = ms.reduce((a, b) => a + b, 0);
           return {
             type: MOVEMENT_TYPE_MAP[t],
-            // Округляем до 1 знака и убираем лишний ноль через Number()
             months: ms.map(v => Number(v.toFixed(1))),
             total: Number(rowSum.toFixed(1))
           };
@@ -183,14 +184,52 @@ export default function StatsPageMobile() {
 
   useEffect(() => { loadAllData(); }, [loadAllData]);
 
-  const getDailyParam = (param: string, index: number) => {
-    const start = dayjs(dateRange.startDate).startOf("day").add(index, grouping);
-    const end = start.endOf(grouping);
-    const relevant = Object.keys(dailyInfo).filter(d => dayjs(d).isBetween(start, end, null, "[]"));
-    if (relevant.length === 0) return "-";
-    const count = relevant.filter(d => dailyInfo[d].main_param === param).length;
-    return count === 0 ? "-" : (grouping === 'day' ? "+" : count);
-  };
+  // МЕМОИЗАЦИЯ ГРАФИКОВ
+  const enduranceChartData = useMemo(() =>
+    columns.map((col, i) => {
+      const obj: any = { month: col };
+      enduranceZones.forEach(z => obj[z.zone] = z.months[i]);
+      return obj;
+    }), [columns, enduranceZones]);
+
+  const distanceChartData = useMemo(() =>
+    columns.map((col, i) => {
+      const obj: any = { month: col };
+      distanceByType.forEach(d => obj[d.type] = d.months[i]);
+      return obj;
+    }), [columns, distanceByType]);
+
+  // ОПТИМИЗИРОВАННЫЙ ПОЛУЧАТЕЛЬ ПАРАМЕТРОВ ДНЯ
+  const statusParamsRows = useMemo(() => {
+    return STATUS_PARAMS.map(p => {
+      const rowVals = columns.map((_, i) => {
+        const start = dayjs(dateRange.startDate).startOf("day").add(i, grouping);
+        const end = start.endOf(grouping);
+
+        // Ищем только в актуальном диапазоне дат вместо фильтрации всего dMap
+        let count = 0;
+        let curr = start;
+        while (curr.isBefore(end) || curr.isSame(end, 'day')) {
+          const key = curr.format("YYYY-MM-DD");
+          if (dailyInfo[key]?.main_param?.includes(p.id)) {
+            count++;
+          }
+          curr = curr.add(1, 'day');
+        }
+
+        if (count === 0) return "-";
+        return grouping === 'day' ? "+" : count;
+      });
+
+      const totalCount = rowVals.reduce((acc: number, v: any) => {
+        if (v === "+") return acc + 1;
+        if (typeof v === "number") return acc + v;
+        return acc;
+      }, 0);
+
+      return { param: p.label, months: rowVals, total: totalCount > 0 ? totalCount : "-" };
+    });
+  }, [columns, dailyInfo, grouping, dateRange.startDate]);
 
   const menuItems = [
     { label: "Главная", icon: Timer, path: "/daily" },
@@ -208,7 +247,6 @@ export default function StatsPageMobile() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-gray-200 pb-32 font-sans overflow-x-hidden">
-      {/* HEADER */}
       <div className="sticky top-0 z-40 bg-[#0a0a0b]/95 backdrop-blur-md border-b border-white/[0.03] px-3 py-2 flex items-center gap-2">
           <div className="shrink-0" onClick={() => navigate("/account")}>
             <div className="w-8 h-8 rounded-full border border-white/10 bg-blue-600 flex items-center justify-center overflow-hidden active:scale-90 transition-transform">
@@ -236,7 +274,6 @@ export default function StatsPageMobile() {
       </div>
 
       <div className="p-3 space-y-4">
-        {/* ПЕРЕКЛЮЧАТЕЛИ */}
         <div className="bg-[#131316] border border-white/[0.03] rounded-2xl p-2.5 space-y-2.5 shadow-xl">
           <div className="flex bg-black/40 p-1 rounded-xl border border-white/[0.05]">
             {["day", "week", "month", "year"].map((t) => (
@@ -270,7 +307,6 @@ export default function StatsPageMobile() {
           </div>
         </div>
 
-        {/* TOTALS */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
             { label: 'Тренировки', val: totals.sessions, icon: Zap, color: 'text-blue-500' },
@@ -288,16 +324,11 @@ export default function StatsPageMobile() {
           ))}
         </div>
 
-        {/* CONTENT */}
         {activeReport === "zones" ? (
           <div className="space-y-4">
             <div className="bg-[#131316] border border-white/[0.03] rounded-2xl p-5 shadow-xl overflow-hidden">
               <div className="h-48 w-full">
-                <EnduranceChart data={columns.map((col, i) => {
-                  const obj: any = { month: col };
-                  enduranceZones.forEach(z => obj[z.zone] = z.months[i]);
-                  return obj;
-                })} zones={enduranceZones} />
+                <EnduranceChart data={enduranceChartData} zones={enduranceZones} />
               </div>
             </div>
 
@@ -307,15 +338,7 @@ export default function StatsPageMobile() {
                 <span className="text-[9px] font-black uppercase tracking-widest text-white">Параметры дня</span>
               </div>
               <SyncedTable
-                rows={STATUS_PARAMS.map(p => {
-                    const rowVals = columns.map((_, i) => getDailyParam(p.id, i));
-                    const totalCount = rowVals.reduce((acc: number, v: any) => {
-                        if (v === "+") return acc + 1;
-                        if (typeof v === "number") return acc + v;
-                        return acc;
-                    }, 0);
-                    return { param: p.label, months: rowVals, total: totalCount > 0 ? totalCount : "-" };
-                })}
+                rows={statusParamsRows}
                 columns={columns} index={0} showBottomTotal={false}
               />
             </div>
@@ -341,11 +364,7 @@ export default function StatsPageMobile() {
             <div className="bg-[#131316] border border-white/[0.03] rounded-2xl p-5 shadow-xl overflow-hidden">
               <div className="h-48 w-full">
                 <DistanceChart
-                  data={columns.map((col, i) => {
-                    const obj: any = { month: col };
-                    distanceByType.forEach(d => obj[d.type] = d.months[i]);
-                    return obj;
-                  })}
+                  data={distanceChartData}
                   types={distanceByType.map(d => d.type)}
                 />
               </div>
@@ -367,7 +386,6 @@ export default function StatsPageMobile() {
         )}
       </div>
 
-      {/* ШТОРКА КАЛЕНДАРЯ */}
       <div className={`fixed inset-0 z-[100] transition-all duration-500 ${showCalendarSheet ? "opacity-100 visible" : "opacity-0 invisible"}`}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCalendarSheet(false)} />
         <div className={`absolute bottom-0 left-0 right-0 w-full bg-[#1a1a1e] rounded-t-[32px] border-t border-white/10 transition-transform duration-500 ${showCalendarSheet ? "translate-y-0" : "translate-y-full"}`}>
@@ -389,7 +407,6 @@ export default function StatsPageMobile() {
         </div>
       </div>
 
-      {/* BOTTOM MENU */}
       <div className="fixed bottom-4 left-4 right-4 z-50">
         <div className="bg-[#131316]/95 backdrop-blur-md border border-white/10 p-1 rounded-xl flex justify-around shadow-2xl">
           {menuItems.map((item) => {

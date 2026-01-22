@@ -24,6 +24,9 @@ export default function CalendarPageMobile() {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
+  
+  // Добавляем стейт для выбранной даты (по умолчанию сегодня)
+  const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -97,7 +100,7 @@ export default function CalendarPageMobile() {
 
         <div className="w-8 shrink-0 flex items-center justify-end">
            <button onClick={() => { localStorage.removeItem("token"); navigate("/login"); }} className="text-gray-600 active:text-red-500 transition-colors">
-              <LogOut size={16} />
+             <LogOut size={16} />
            </button>
         </div>
       </div>
@@ -108,7 +111,8 @@ export default function CalendarPageMobile() {
           <TrainingCalendar
             key={calendarKey}
             currentMonth={currentDate}
-            // Передаем функцию открытия модалки в календарь, если он это поддерживает
+            // Передаем функцию записи выбранной даты
+            onDateChange={setSelectedDate}
             onDayClick={() => setIsAddModalOpen(true)}
           />
         </div>
@@ -136,9 +140,11 @@ export default function CalendarPageMobile() {
 
       {/* МОДАЛКА */}
       <CalendarModalAdd
+        key={selectedDate} // Пересоздаем модалку при смене даты
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddWorkout={handleWorkoutAdded}
+        initialDate={selectedDate} // Передаем дату в модалку
       />
     </div>
   );

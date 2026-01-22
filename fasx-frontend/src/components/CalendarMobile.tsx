@@ -66,7 +66,13 @@ const activityStyles: any = {
 
 const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-export default function CalendarMobile({ currentMonth }: { currentMonth: dayjs.Dayjs }) {
+// ДОБАВЛЕН ТИП ПРОПСОВ
+interface CalendarMobileProps {
+  currentMonth: dayjs.Dayjs;
+  onDateChange?: (date: string) => void;
+}
+
+export default function CalendarMobile({ currentMonth, onDateChange }: CalendarMobileProps) {
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
@@ -107,6 +113,14 @@ export default function CalendarMobile({ currentMonth }: { currentMonth: dayjs.D
 
   const selectedWorkouts = trainingsMap[selectedDate] || [];
 
+  // ФУНКЦИЯ ОБРАБОТКИ КЛИКА
+  const handleDateClick = (dateStr: string) => {
+    setSelectedDate(dateStr);
+    if (onDateChange) {
+      onDateChange(dateStr);
+    }
+  };
+
   if (loading) return (
     <div className="h-96 flex flex-col items-center justify-center gap-4 bg-[#131316]">
       <Loader2 className="animate-spin text-blue-500" size={32} />
@@ -132,7 +146,7 @@ export default function CalendarMobile({ currentMonth }: { currentMonth: dayjs.D
             return (
               <button
                 key={dateStr}
-                onClick={() => setSelectedDate(dateStr)}
+                onClick={() => handleDateClick(dateStr)}
                 className={`relative aspect-square flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 ${isSelected ? "bg-blue-600 text-white shadow-lg scale-105 z-10" : "bg-white/[0.02]"} ${!isCurrentMonth && !isSelected ? "opacity-20" : ""}`}
               >
                 <span className={`text-[12px] font-black ${isToday && !isSelected ? "text-blue-500" : ""}`}>{d.date()}</span>
@@ -157,7 +171,6 @@ export default function CalendarMobile({ currentMonth }: { currentMonth: dayjs.D
             <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1.5">{dayjs(selectedDate).format("dddd")}</span>
           </div>
 
-          {/* ОБНОВЛЕННАЯ СЕРАЯ КНОПКА */}
           <button
             onClick={() => setModalAddOpen(true)}
             className="p-2.5 bg-[#1c1c1f] border border-white/[0.05] rounded-xl text-gray-400 shadow-sm active:scale-90 transition-all active:bg-[#252529]"

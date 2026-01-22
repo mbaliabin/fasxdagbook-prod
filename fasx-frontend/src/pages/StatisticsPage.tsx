@@ -51,6 +51,7 @@ const DISTANCE_COLORS: Record<string, string> = {
 const STATUS_PARAMS = [
     { id: 'skadet', label: 'Травма' },
     { id: 'syk', label: 'Болезнь' },
+    { id: 'hoyde', label: 'Высота' }, // Добавлена новая строка
     { id: 'paReise', label: 'В пути' },
     { id: 'hoydedogn', label: 'Смена пояса' },
     { id: 'fridag', label: 'Выходной' },
@@ -195,7 +196,8 @@ export default function StatsPage() {
     const isStatus = STATUS_PARAMS.some(p => p.id === param);
 
     if (isStatus) {
-      const count = relevant.filter(d => dailyInfo[d].main_param === param).length;
+      // Обновлено: используем .includes() для поддержки нескольких статусов одновременно
+      const count = relevant.filter(d => dailyInfo[d].main_param && dailyInfo[d].main_param.includes(param)).length;
       if (count === 0) return "-";
       return periodType === 'day' ? '+' : count;
     }

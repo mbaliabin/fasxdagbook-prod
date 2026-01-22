@@ -5,7 +5,7 @@ export async function getUserProfile() {
   }
 
   // Используем переменную окружения вместо жесткого IP
-  const apiUrl = import.meta.env.VITE_API_URL || "https://fasx.pro";
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api/profile";
 
   const res = await fetch(`${apiUrl}/api/profile`, {
     method: "GET",

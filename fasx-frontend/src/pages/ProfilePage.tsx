@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Timer, MapPin, Zap, Target, Plus, LogOut, ChevronLeft,
   ChevronRight, ChevronDown, Calendar, Home, BarChart3,
@@ -37,6 +37,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Состояния для планирования
+  const [activePlan, setActivePlan] = useState<any>(null);
+  const [planRows, setPlanRows] = useState<any[]>([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(dayjs());
   const [dateRange, setDateRange] = useState<{ startDate: Date; endDate: Date } | null>({
@@ -46,18 +51,40 @@ export default function ProfilePage() {
   const [showDateRangePicker, setShowDateRangePicker] = useState(false);
 
   const fetchData = useCallback(async () => {
+    const API_URL = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem('token');
     try {
-      const [profileData, workoutsRes] = await Promise.all([
+      const [profileData, workoutsRes, plansRes] = await Promise.all([
         getUserProfile(),
-        fetch(`${import.meta.env.VITE_API_URL}/api/workouts/user`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        fetch(`${API_URL}/api/workouts/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/api/planning`, {
+          headers: { Authorization: `Bearer ${token}` },
         })
       ]);
 
       setProfile(profileData);
       if (workoutsRes.ok) {
-        const wData = await workoutsRes.json();
-        setWorkouts(wData);
+        setWorkouts(await workoutsRes.json());
+      }
+
+      // Загрузка активного плана
+      if (plansRes.ok) {
+        const plans = await plansRes.json();
+        const savedPlanId = localStorage.getItem('active_plan_id');
+        const currentPlan = plans.find((p: any) => p.id === savedPlanId) || plans[0];
+        
+        if (currentPlan) {
+          setActivePlan(currentPlan);
+          const rowsRes = await fetch(`${API_URL}/api/planning/data?planId=${currentPlan.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (rowsRes.ok) {
+            const rowData = await rowsRes.json();
+            setPlanRows(rowData.rows || []);
+          }
+        }
       }
     } catch (err) {
       console.error("Ошибка загрузки:", err);
@@ -67,6 +94,70 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Расчет точного процента Compliance
+  const complianceScore = useMemo(() => {
+    if (!activePlan || !planRows.length) return "0%";
+
+    const start = dayjs(activePlan.startDate).startOf('day');
+    const end = dayjs(activePlan.endDate).endOf('day');
+    
+    const planWorkouts = workouts.filter(w => 
+      dayjs(w.date).isBetween(start, end, null, '[]')
+    );
+
+    const fact = {
+      hours: planWorkouts.reduce((sum, w) => sum + (Number(w.duration) || 0), 0) / 60,
+      distance: planWorkouts.reduce((sum, w) => sum + (Number(w.distance) || 0), 0),
+      sessions: planWorkouts.length,
+      intense: planWorkouts.filter(w => {
+        const dur = Number(w?.duration) || 1;
+        const score = ((Number(w?.zone1Min)||0)*1 + (Number(w?.zone2Min)||0)*1.5 + (Number(w?.zone3Min)||0)*3 + (Number(w?.zone4Min)||0)*6 + (Number(w?.zone5Min)||0)*12) / dur;
+        return score >= 2.0;
+      }).length,
+      strength: planWorkouts.filter(w => w?.type === 'StrengthTraining').length
+    };
+
+    const getPlanSum = (labelPart: string, isHours: boolean = false) => {
+      const row = planRows.find(r => r.label?.toLowerCase().includes(labelPart.toLowerCase()));
+      if (!row || !row.values) return 0;
+      let total = 0;
+      let curr = start.clone();
+      while (curr.isBefore(end) || curr.isSame(end, 'month')) {
+        const mIdx = curr.month();
+        const valIdx = row.isDouble ? (isHours ? mIdx * 2 + 1 : mIdx * 2) : mIdx;
+        total += Number(row.values[valIdx]) || 0;
+        curr = curr.add(1, 'month');
+      }
+      return total;
+    };
+
+    const planValues = {
+      hours: getPlanSum("Часы", true),
+      distance: getPlanSum("Дистанция", false),
+      sessions: getPlanSum("Сессии", false),
+      intense: getPlanSum("Интенсивные", false),
+      strength: getPlanSum("Сила", false)
+    };
+
+    const metrics = [
+      { f: fact.hours, p: planValues.hours },
+      { f: fact.distance, p: planValues.distance },
+      { f: fact.sessions, p: planValues.sessions },
+      { f: fact.intense, p: planValues.intense },
+      { f: fact.strength, p: planValues.strength }
+    ];
+
+    const activeMetrics = metrics.filter(m => m.p > 0);
+    if (activeMetrics.length === 0) return "0%";
+
+    const totalPercent = activeMetrics.reduce((acc, m) => {
+      const current = Math.min((m.f / m.p) * 100, 100);
+      return acc + current;
+    }, 0);
+
+    return `${Math.round(totalPercent / activeMetrics.length)}%`;
+  }, [workouts, activePlan, planRows]);
 
   const filteredWorkouts = workouts.filter(w => {
     const workoutDate = dayjs(w.date)
@@ -200,7 +291,7 @@ export default function ProfilePage() {
             { label: 'Total Duration', val: `${hours}:${minutes.toString().padStart(2, '0')}`, sub: `${filteredWorkouts.length} сессий`, icon: Timer, color: 'text-blue-500' },
             { label: 'Distance', val: `${filteredWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0).toFixed(1)} km`, sub: 'Всего за период', icon: MapPin, color: 'text-emerald-500' },
             { label: 'Workouts', val: filteredWorkouts.length, sub: 'Активности', icon: Zap, color: 'text-amber-500' },
-            { label: 'Compliance', val: '94%', sub: 'Выполнение плана', icon: Target, color: 'text-purple-500' },
+            { label: 'Compliance', val: complianceScore, sub: 'Выполнение плана', icon: Target, color: 'text-purple-500' },
           ].map((stat, i) => (
             <div key={i} className="bg-[#131316] border border-white/[0.03] p-5 rounded-xl shadow-sm hover:border-white/10 transition-all">
               <div className="flex items-center gap-2 text-gray-500 mb-3">

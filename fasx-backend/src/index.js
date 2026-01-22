@@ -9,6 +9,7 @@ import profileRoutes from './routes/profile.js'
 import workoutRoutes from './routes/workouts.js'  // Импорт роутов тренировок
 import dailyInformationRouter from './routes/dailyInformation.js';
 import dailyRangeRouter from './routes/dailyRange.js';
+import planningRoutes from './routes/planning.js';
 
 dotenv.config()
 
@@ -22,7 +23,7 @@ console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***' : undefined);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 4000
 const prisma = new PrismaClient()
 
 // Используем FRONTEND_URL из .env или дефолт
@@ -42,6 +43,7 @@ app.use('/api/profile', profileRoutes)
 app.use('/api/workouts', workoutRoutes)
 app.use("/api/daily-information", dailyInformationRouter);
 app.use("/api/daily-information", dailyRangeRouter);
+app.use("/api/planning", planningRoutes);
 
 
 // Проверка соединения с БД

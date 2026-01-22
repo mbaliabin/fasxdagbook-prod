@@ -42,3 +42,16 @@ html, body {
   scrollbar-color: #444 #1a1a1d;
 }
 
+/* Убираем стрелки у числовых инпутов */
+
+/* Для Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Для Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
