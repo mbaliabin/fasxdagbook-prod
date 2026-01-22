@@ -1,5 +1,5 @@
 services:
-  # 1. База данных
+  
   db:
     image: postgres:17
     container_name: dagbook-db
@@ -14,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # 2. Бэкенд
+  
   backend:
     build: ./fasx-backend
     restart: always
@@ -33,15 +33,13 @@ services:
     depends_on:
       - db
 
-  # 3. Фронтенд
+  
   frontend:
     build: ./fasx-frontend
     container_name: dagbook-frontend
     restart: always
     ports:
-      - "5173:80"  # Поменяли на 8080, чтобы не путать с 5173
-    # volumes:      # УДАЛИ ИЛИ ЗАКОММЕНТИРУЙ ЭТИ ДВЕ СТРОКИ
-    #  - ./fasx-frontend:/app
+      - "5173:80"
     depends_on:
       - backend
 
