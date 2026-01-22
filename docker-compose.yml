@@ -5,9 +5,10 @@ services:
     container_name: dagbook-db
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: fasx_user
+      POSTGRES_PASSWORD: 199510Ma%
+      POSTGRES_DB: fasx
+
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -17,10 +18,10 @@ services:
     restart: always
     container_name: dagbook-backend
     ports:
-      - "4000:4000"
+      - "5000:5000"
     env_file:
       - ./fasx-backend/.env
-    
+    # Мы убрали DATABASE_URL отсюда, теперь он будет браться ТОЛЬКО из .env
     environment:
       NODE_ENV: production
     volumes:
@@ -30,13 +31,15 @@ services:
     depends_on:
       - db
 
-  
+  # 3. Фронтенд
   frontend:
     build: ./fasx-frontend
     container_name: dagbook-frontend
     restart: always
     ports:
-      - "5173:80" 
+      - "5173:80"  # Поменяли на 8080, чтобы не путать с 5173
+    # volumes:      # УДАЛИ ИЛИ ЗАКОММЕНТИРУЙ ЭТИ ДВЕ СТРОКИ
+    #  - ./fasx-frontend:/app
     depends_on:
       - backend
 
