@@ -23,7 +23,6 @@ services:
     - "5000:5000"
     env_file:
       - ./fasx-backend/.env
-    # Мы убрали DATABASE_URL отсюда, теперь он будет браться ТОЛЬКО из .env
     environment:
       NODE_ENV: production
     volumes:
