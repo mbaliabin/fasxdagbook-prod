@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, X, Calendar, ChevronRight, TrendingUp, Timer, Inbox, Navigation } from 'lucide-react';
+import { X, Calendar, ChevronRight, TrendingUp, Timer, Inbox, Navigation } from 'lucide-react';
 import { Dialog, Transition } from '@headlessui/react';
 import dayjs from 'dayjs';
 
@@ -17,17 +17,30 @@ interface Props {
   workouts: Workout[];
 }
 
-// Возвращаем полные названия как в десктопной версии
+// Исправленный маппинг с приоритетом лыжероллеров
 const mapDbToDisplay = (dbType: string): string => {
   const t = dbType.toLowerCase();
-  if (t.includes('ski') && t.includes('classic')) return "Лыжи/ классический стиль";
-  if (t.includes('ski') && (t.includes('skate') || t.includes('конь'))) return "Лыжи/ коньковый стиль";
-  if (t.includes('roller') && (t.includes('skate') || t.includes('конь'))) return "Лыжероллеры / коньковый стиль";
-  if (t.includes('roller') && t.includes('classic')) return "Лыжероллеры / классический стиль";
-  if (t.includes('imitation') || t.includes('имитация')) return "Бег / лыжная имитация";
+
+  if (t.includes('roller')) {
+    if (t.includes('skate') || t.includes('конь')) return "Лыжероллеры / коньковый стиль";
+    if (t.includes('classic')) return "Лыжероллеры / классический стиль";
+    return "Лыжероллеры";
+  }
+
+  if (t.includes('imitation') || t.includes('имитация')) {
+    return "Бег / лыжная имитация";
+  }
+
+  if (t.includes('ski')) {
+    if (t.includes('classic')) return "Лыжи / классический стиль";
+    if (t.includes('skate') || t.includes('конь')) return "Лыжи / коньковый стиль";
+    return "Лыжи";
+  }
+
   if (t.includes('bike') || t.includes('вело')) return "Велосипед";
   if (t.includes('strength') || t.includes('силовая')) return "Силовая тренировка";
   if (t.includes('run') || t.includes('бег')) return "Бег";
+
   return "Другое";
 };
 
@@ -51,7 +64,11 @@ export default function ActivityTableMobile({ workouts }: Props) {
   }, {} as Record<string, { duration: number; sessions: number }>);
 
   const activityRows = Object.entries(statsMap)
-    .map(([type, stats]) => ({ type, ...stats, share: totalMinutes > 0 ? (stats.duration / totalMinutes) * 100 : 0 }))
+    .map(([type, stats]) => ({
+      type,
+      ...stats,
+      share: totalMinutes > 0 ? (stats.duration / totalMinutes) * 100 : 0
+    }))
     .filter(row => row.sessions > 0)
     .sort((a, b) => b.duration - a.duration);
 
@@ -61,9 +78,8 @@ export default function ActivityTableMobile({ workouts }: Props) {
 
   return (
     <div className="w-full font-sans">
-      {/* HEADER */}
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <Activity size={12} className="text-blue-500" />
+      {/* HEADER (Иконка удалена) */}
+      <div className="flex items-center mb-3 px-1">
         <h2 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Аналитика видов</h2>
       </div>
 
@@ -80,17 +96,17 @@ export default function ActivityTableMobile({ workouts }: Props) {
               <button
                 key={idx}
                 onClick={() => setSelectedType(row.type)}
-                className="w-full flex items-center justify-between p-4 active:bg-white/[0.02] transition-colors"
+                className="w-full flex items-center justify-between p-4 active:bg-white/[0.02] transition-colors text-left"
               >
                 <div className="flex-1 pr-4">
                   <div className="flex justify-between items-end mb-2">
                     <span className="text-[10px] font-black text-gray-300 uppercase tracking-tight truncate max-w-[140px]">
                         {row.type}
                     </span>
-                    <span className="text-[10px] font-black text-white">{formatTime(row.duration)}</span>
+                    <span className="text-[10px] font-black text-white tabular-nums">{formatTime(row.duration)}</span>
                   </div>
                   <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${row.share}%` }} />
+                    <div className="h-full bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]" style={{ width: `${row.share}%` }} />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pl-3 border-l border-white/[0.05]">
@@ -135,16 +151,15 @@ export default function ActivityTableMobile({ workouts }: Props) {
                     <button onClick={() => setSelectedType(null)} className="p-1 text-gray-500"><X size={20} /></button>
                   </div>
 
-                  {/* Quick Stats */}
+                  {/* Quick Stats (Иконки заменены на минималистичные текстовые или удалены) */}
                   <div className="grid grid-cols-3 gap-2 mb-6">
                     {[
-                      { icon: Timer, label: "Всего", val: formatTime(typeTotalMinutes) },
-                      { icon: Activity, label: "Сессий", val: filteredWorkouts.length },
-                      { icon: TrendingUp, label: "Средняя", val: `${avgDuration}м` },
+                      { label: "Всего", val: formatTime(typeTotalMinutes) },
+                      { label: "Сессий", val: filteredWorkouts.length },
+                      { label: "Средняя", val: `${avgDuration}м` },
                     ].map((item, i) => (
-                      <div key={i} className="bg-white/[0.03] border border-white/5 p-3 rounded-xl text-center">
-                        <item.icon size={12} className="mx-auto mb-1.5 text-blue-500/50" />
-                        <div className="text-[10px] font-black text-white">{item.val}</div>
+                      <div key={i} className="bg-white/[0.03] border border-white/5 py-4 rounded-xl text-center">
+                        <div className="text-[11px] font-black text-white mb-0.5">{item.val}</div>
                         <div className="text-[6px] font-bold text-gray-500 uppercase tracking-tighter">{item.label}</div>
                       </div>
                     ))}
@@ -153,12 +168,12 @@ export default function ActivityTableMobile({ workouts }: Props) {
                   {/* Workouts List */}
                   <div className="space-y-2 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
                     {filteredWorkouts.map((w) => (
-                      <div key={w.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+                      <div key={w.id} className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.03]">
                         <div>
                           <div className="text-[10px] font-black text-gray-200 mb-0.5">{dayjs(w.date).format("D MMMM YYYY")}</div>
                           {w.distance && (
-                            <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-500 uppercase">
-                              <Navigation size={9} /> {w.distance.toFixed(1)} км
+                            <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">
+                               {w.distance.toFixed(1)} км
                             </div>
                           )}
                         </div>

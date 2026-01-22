@@ -18,7 +18,7 @@ const s3Client = new S3Client({
 const storage = multer.memoryStorage();
 export const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 // --- 1. Получение данных пользователя (ИСПРАВЛЕНО) ---

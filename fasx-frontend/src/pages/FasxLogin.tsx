@@ -1,13 +1,17 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom"; // Добавили useSearchParams
 import { loginUser } from "@/api/loginUser";
-import { Activity, ShieldCheck, BarChart3, Mail, Lock, Loader2, ArrowRight } from "lucide-react";
+import { Activity, ShieldCheck, BarChart3, Mail, Lock, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function FasxLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Достаем параметры из URL
+  const [searchParams] = useSearchParams();
+  const isVerified = searchParams.get("verified") === "true";
 
   const navigate = useNavigate();
 
@@ -21,7 +25,12 @@ export default function FasxLogin() {
       localStorage.setItem("token", token);
       navigate("/daily");
     } catch (err: any) {
-      setError(err.message || "Ошибка входа");
+      // Если бэкенд возвращает 403 (не подтвержден), выведем понятную ошибку
+      if (err.status === 403) {
+        setError("Пожалуйста, подтвердите ваш Email перед входом.");
+      } else {
+        setError(err.message || "Ошибка входа");
+      }
     } finally {
       setLoading(false);
     }
@@ -33,7 +42,7 @@ export default function FasxLogin() {
       {/* Главный контейнер */}
       <div className="w-full max-w-5xl flex flex-col md:flex-row bg-[#131316] rounded-3xl md:rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border border-white/[0.03]">
 
-        {/* Левая часть: Приветствие (Адаптировано под мобильные) */}
+        {/* Левая часть: Приветствие */}
         <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-gradient-to-br from-blue-600/10 to-transparent border-b md:border-b-0 md:border-r border-white/[0.05]">
           <div className="mb-6 md:mb-8 inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-blue-600 shadow-xl shadow-blue-500/20 border border-white/10">
             <Activity size={28} className="text-white stroke-[2.5px]" />
@@ -50,7 +59,19 @@ export default function FasxLogin() {
         {/* Правая часть: Форма */}
         <div className="w-full md:w-1/2 p-6 md:p-16">
 
-          {/* Иконки преимуществ (Сделаны компактнее для мобильных) */}
+          {/* УВЕДОМЛЕНИЕ О ПОДТВЕРЖДЕНИИ ПОЧТЫ */}
+          {isVerified && (
+            <div className="mb-8 p-4 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <CheckCircle2 size={18} className="text-green-500" />
+              </div>
+              <div>
+                <p className="text-white text-xs font-bold uppercase tracking-wider">Почта подтверждена</p>
+                <p className="text-green-500/70 text-[10px] font-medium">Теперь вы можете войти в свой аккаунт</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3 mb-8 md:mb-12">
             {[
               { icon: Activity, label: "Анализ" },
@@ -75,7 +96,7 @@ export default function FasxLogin() {
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
                 <input
                   type="email"
-                  inputMode="email" // Вызывает правильную клавиатуру на мобилках
+                  inputMode="email"
                   placeholder="name@example.com"
                   className="w-full pl-12 pr-4 py-3 md:py-3.5 rounded-xl bg-black/40 border border-white/[0.05] text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-gray-700 text-sm md:text-base"
                   value={email}
@@ -135,16 +156,6 @@ export default function FasxLogin() {
             </Link>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 md:mt-10 text-center px-4">
-        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
-          Experiencing issues? Contact us at
-        </p>
-        <a href="mailto:support@fasx.pro" className="text-blue-500/80 hover:text-blue-500 transition-colors text-[10px] md:text-xs font-medium">
-          support@fasx.pro
-        </a>
       </div>
     </div>
   );

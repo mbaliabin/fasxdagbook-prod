@@ -7,9 +7,11 @@ interface AddWorkoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddWorkout: (workout: any) => void;
+  initialDate?: string; // 1. Добавляем опциональный проп
 }
 
-export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout }: AddWorkoutModalProps) {
+// 2. Принимаем initialDate здесь
+export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout, initialDate }: AddWorkoutModalProps) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [comment, setComment] = useState("");
@@ -22,7 +24,8 @@ export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout }: AddWo
   useEffect(() => {
     if (isOpen) {
       setTitle("");
-      setDate(new Date().toISOString().split('T')[0]);
+      // 3. Устанавливаем переданную дату или текущую, если проп пустой
+      setDate(initialDate || new Date().toISOString().split('T')[0]);
       setComment("");
       setEffort(null);
       setFeeling(null);
@@ -30,7 +33,7 @@ export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout }: AddWo
       setZones(["", "", "", "", ""]);
       setDistance("");
     }
-  }, [isOpen]);
+  }, [isOpen, initialDate]); // Добавляем initialDate в зависимости
 
   const handleZoneChange = (index: number, value: string) => {
     if (/^\d*$/.test(value)) {
@@ -84,7 +87,6 @@ export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout }: AddWo
     } catch (error) { toast.error("Ошибка сети", { id: loadingToast }); }
   };
 
-  // Цвета зон в стиле твоего нового календаря
   const zoneColors = ["bg-sky-400", "bg-green-500", "bg-yellow-400", "bg-orange-500", "bg-red-600"];
   const zoneLabels = ["I1", "I2", "I3", "I4", "I5"];
 
@@ -105,7 +107,6 @@ export default function AddWorkoutModal({ isOpen, onClose, onAddWorkout }: AddWo
               </div>
 
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide pb-32">
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Название</label>

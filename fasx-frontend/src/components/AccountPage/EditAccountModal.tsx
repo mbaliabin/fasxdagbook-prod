@@ -60,7 +60,7 @@ export default function EditAccountModal({ isOpen, onClose, profile, onUpdate }:
     };
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://46.173.18.36:4000";
+      const baseUrl = import.meta.env.VITE_API_URL || "https://fasx.pro";
 
       const response = await fetch(`${baseUrl}/api/profile`, {
         method: "PUT",

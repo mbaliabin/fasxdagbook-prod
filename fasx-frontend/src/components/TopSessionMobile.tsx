@@ -9,7 +9,6 @@ import 'dayjs/locale/ru';
 
 dayjs.locale('ru');
 
-// --- Кастомная иконка Лыжника ---
 const SkiIcon = ({ size = 24, color = "currentColor" }: { size?: number, color?: string }) => (
   <svg
     width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -45,7 +44,8 @@ interface Props {
 
 function getTypeInfo(type: string) {
   const lowerType = type.toLowerCase();
-  if (lowerType.includes("ski") || lowerType.includes("лыжи")) return { icon: SkiIcon, label: "Лыжи", color: "#06b6d4" };
+  if (lowerType.includes("roller")) return { icon: SkiIcon, label: "Лыжероллеры", color: "#f97316" };
+  if (lowerType.includes("ski")) return { icon: SkiIcon, label: "Лыжи", color: "#06b6d4" };
   if (lowerType.includes("run") || lowerType.includes("бег")) return { icon: Footprints, label: "Бег", color: "#3b82f6" };
   if (lowerType.includes("strength") || lowerType.includes("силовая")) return { icon: Dumbbell, label: "Силовая", color: "#f59e0b" };
   if (lowerType.includes("bike") || lowerType.includes("вело")) return { icon: Bike, label: "Велосипед", color: "#10b981" };
@@ -55,12 +55,21 @@ function getTypeInfo(type: string) {
 export default function TopSessionMobile({ workouts }: Props) {
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
 
+  // Новая формула расчета нагрузки (включая Z2)
+  const calcLoad = (w: Workout) => {
+    return Math.round(
+      (w.zone2Min || 0) * 0.5 +
+      (w.zone3Min || 0) * 1 +
+      (w.zone4Min || 0) * 2 +
+      (w.zone5Min || 0) * 4
+    );
+  };
+
   const { longest, hardest, bestFeeling } = useMemo(() => {
     if (workouts.length === 0) return { longest: null, hardest: null, bestFeeling: null };
-    const calcIntensity = (w: Workout) => (w.zone3Min || 0) * 1 + (w.zone4Min || 0) * 2 + (w.zone5Min || 0) * 4;
     return {
       longest: [...workouts].sort((a, b) => b.duration - a.duration)[0],
-      hardest: [...workouts].sort((a, b) => calcIntensity(b) - calcIntensity(a))[0],
+      hardest: [...workouts].sort((a, b) => calcLoad(b) - calcLoad(a))[0],
       bestFeeling: [...workouts].filter(w => w.feeling !== undefined).sort((a, b) => (b.feeling ?? 0) - (a.feeling ?? 0))[0]
     };
   }, [workouts]);
@@ -102,7 +111,6 @@ export default function TopSessionMobile({ workouts }: Props) {
 
   return (
     <div className="w-full font-sans px-2">
-      {/* Мобильный заголовок с кнопкой */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
@@ -121,11 +129,10 @@ export default function TopSessionMobile({ workouts }: Props) {
 
       <div className="flex flex-col gap-3">
         {renderMobileCard("Время", longest, Timer, "#3b82f6", String(longest?.duration), "мин")}
-        {renderMobileCard("Нагрузка", hardest, Zap, "#ef4444", String(Math.round((hardest?.zone3Min || 0) + (hardest?.zone4Min || 0) * 2 + (hardest?.zone5Min || 0) * 4)), "load")}
+        {renderMobileCard("Нагрузка", hardest, Zap, "#ef4444", String(calcLoad(hardest!)), "load")}
         {renderMobileCard("Тонус", bestFeeling, Smile, "#a855f7", String(bestFeeling?.feeling || 0), "/ 10")}
       </div>
 
-      {/* Модалка (адаптированная под мобилки) */}
       <Transition show={!!selectedWorkout} as={React.Fragment}>
         <Dialog as="div" className="relative z-[100]" onClose={() => setSelectedWorkout(null)}>
           <Transition.Child as={React.Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
@@ -158,14 +165,17 @@ export default function TopSessionMobile({ workouts }: Props) {
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
                             {[
-                                { label: "КМ", val: selectedWorkout.distance || "0", icon: Navigation, color: "text-blue-500" },
+                                // Километры не отображаются для силовых тренировок
+                                ...(!(selectedWorkout.type.toLowerCase().includes('strength') || selectedWorkout.type.toLowerCase().includes('силовая'))
+                                  ? [{ label: "КМ", val: selectedWorkout.distance || "0", icon: Navigation, color: "text-blue-500" }]
+                                  : []),
                                 { label: "МИН", val: selectedWorkout.duration, icon: Clock, color: "text-green-500" },
-                                { label: "LOAD", val: Math.round((selectedWorkout.zone3Min || 0) + (selectedWorkout.zone4Min || 0) * 2 + (selectedWorkout.zone5Min || 0) * 4), icon: Zap, color: "text-orange-500" },
+                                { label: "LOAD", val: calcLoad(selectedWorkout), icon: Zap, color: "text-orange-500" },
                                 { label: "ТОНУС", val: selectedWorkout.feeling || "—", icon: Smile, color: "text-purple-500" },
                             ].map((s, i) => (
                                 <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-2xl">
                                     <span className="text-[8px] font-black text-gray-500 uppercase block mb-1">{s.label}</span>
-                                    <span className="text-xl font-black text-white">{s.val}</span>
+                                    <span className="text-xl font-black text-white tabular-nums">{s.val}</span>
                                 </div>
                             ))}
                         </div>
@@ -181,13 +191,17 @@ export default function TopSessionMobile({ workouts }: Props) {
                                 { l: "Z4 Порог", v: selectedWorkout.zone4Min, c: "bg-orange-500" },
                                 { l: "Z3 Темп", v: selectedWorkout.zone3Min, c: "bg-yellow-500" },
                                 { l: "Z2 База", v: selectedWorkout.zone2Min, c: "bg-blue-500" },
+                                { l: "Z1 Восст", v: selectedWorkout.zone1Min, c: "bg-emerald-500" },
                             ].map((z, i) => (
                                 <div key={i} className="flex items-center gap-3">
                                     <span className="text-[9px] font-black text-gray-500 w-12 uppercase">{z.l}</span>
                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                        <div className={`h-full ${z.c}`} style={{ width: `${(z.v || 0) / (selectedWorkout.duration || 1) * 100}%` }} />
+                                        <div
+                                          className={`h-full ${z.c}`}
+                                          style={{ width: `${(z.v || 0) / (selectedWorkout.duration || 1) * 100}%` }}
+                                        />
                                     </div>
-                                    <span className="text-[10px] font-black text-white w-8 text-right">{z.v || 0}</span>
+                                    <span className="text-[10px] font-black text-white w-8 text-right tabular-nums">{z.v || 0}</span>
                                 </div>
                             ))}
                         </div>

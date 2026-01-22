@@ -32,7 +32,6 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
   const [loading, setLoading] = useState(false);
   const [workout, setWorkout] = useState<Workout | null>(null);
 
-  // Состояния для формы
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [comment, setComment] = useState("");
@@ -43,6 +42,10 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
   const [distance, setDistance] = useState<number | "">("");
 
   const isEditing = mode === "edit";
+
+  // Цвета как в основной модалке (Серый, Синий, Желтый, Оранжевый, Красный)
+  const zoneColors = ["bg-gray-400", "bg-blue-400", "bg-yellow-400", "bg-orange-400", "bg-red-500"];
+  const zoneLabels = ["I1", "I2", "I3", "I4", "I5"];
 
   useEffect(() => {
     if (!workoutId || !isOpen) return;
@@ -56,7 +59,7 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
         });
         const data = await res.json();
         setWorkout(data);
-        setName(data.name);
+        setName(data.name || "");
         setDate(data.date.slice(0, 10));
         setComment(data.comment || "");
         setEffort(data.effort ?? null);
@@ -79,7 +82,10 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
     fetchWorkout();
   }, [workoutId, isOpen]);
 
-  const totalMin = useMemo(() => zones.reduce((sum, val) => sum + (parseInt(val) || 0), 0), [zones]);
+  // СТРОГИЙ РАСЧЕТ ОБЩЕГО ВРЕМЕНИ
+  const totalMin = useMemo(() => {
+    return zones.reduce((sum, val) => sum + (Math.floor(Number(val)) || 0), 0);
+  }, [zones]);
 
   const pace = useMemo(() => {
     if (distance && totalMin && Number(distance) > 0) {
@@ -92,22 +98,22 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
     return null;
   }, [distance, totalMin]);
 
-  // Форматирование даты для режима просмотра
   const formattedFullDate = useMemo(() => {
     if (!date) return "";
     const d = new Date(date);
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: '2-digit' };
     const localeDate = new Intl.DateTimeFormat('ru-RU', options).format(d);
-    // Делаем первую букву заглавной (Вторник 16.12)
     return localeDate.charAt(0).toUpperCase() + localeDate.slice(1);
   }, [date]);
 
   const handleSave = async () => {
     const loadingToast = toast.loading("Сохранение...");
     const intensityZones = {
-      zone1Min: parseInt(zones[0]) || 0, zone2Min: parseInt(zones[1]) || 0,
-      zone3Min: parseInt(zones[2]) || 0, zone4Min: parseInt(zones[3]) || 0,
-      zone5Min: parseInt(zones[4]) || 0,
+      zone1Min: Math.floor(Number(zones[0])) || 0,
+      zone2Min: Math.floor(Number(zones[1])) || 0,
+      zone3Min: Math.floor(Number(zones[2])) || 0,
+      zone4Min: Math.floor(Number(zones[3])) || 0,
+      zone5Min: Math.floor(Number(zones[4])) || 0,
     };
 
     try {
@@ -115,7 +121,12 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/workouts/${workoutId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name, date, comment, effort, feeling, type, duration: totalMin, distance: Number(distance) || null, intensityZones }),
+        body: JSON.stringify({
+          name, date, comment, effort, feeling, type,
+          duration: totalMin,
+          distance: Number(distance) || null,
+          intensityZones
+        }),
       });
 
       if (res.ok) {
@@ -129,9 +140,6 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
     }
   };
 
-  const zoneColors = ["bg-green-500", "bg-lime-400", "bg-yellow-400", "bg-orange-400", "bg-red-500"];
-  const zoneLabels = ["I1", "I2", "I3", "I4", "I5"];
-
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/80 backdrop-blur-md" aria-hidden="true" />
@@ -142,17 +150,11 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
         <div className="sticky top-0 bg-[#1a1a1d]/90 backdrop-blur-md z-10 px-8 py-6 border-b border-gray-800 flex justify-between items-center">
           <div>
             {!isEditing ? (
-              /* --- ЗАГОЛОВОК ПРИ ПРОСМОТРЕ --- */
               <div className="space-y-0.5">
-                <div className="text-blue-500 text-2xl font-black tracking-tight">
-                  {formattedFullDate}
-                </div>
-                <Dialog.Title className="text-gray-400 font-medium tracking-tight italic">
-                  {name || "Без названия"}
-                </Dialog.Title>
+                <div className="text-blue-500 text-2xl font-black tracking-tight">{formattedFullDate}</div>
+                <Dialog.Title className="text-gray-400 font-medium tracking-tight italic">{name || "Без названия"}</Dialog.Title>
               </div>
             ) : (
-              /* --- ЗАГОЛОВОК ПРИ РЕДАКТИРОВАНИИ (БЕЗ ИЗМЕНЕНИЙ) --- */
               <>
                 <div className="flex items-center gap-2 text-blue-500 mb-0.5">
                   <Calendar size={12} />
@@ -169,7 +171,6 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
           {loading ? (
             <div className="h-64 flex items-center justify-center text-gray-500 animate-pulse font-medium">Загрузка данных...</div>
           ) : !isEditing ? (
-            /* --- ОБЗОР (VIEW) --- */
             <div className="space-y-10">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="bg-[#2a2a2d] p-5 rounded-2xl border border-gray-800">
@@ -193,25 +194,40 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
                 )}
               </div>
 
+              {/* ИСПРАВЛЕННАЯ ПОЛОСКА ИНТЕНСИВНОСТИ */}
               <div className="space-y-4">
                 <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">Интенсивность</h4>
-                <div className="flex h-10 w-full rounded-xl overflow-hidden bg-gray-900 shadow-inner">
+                <div className="flex h-10 w-full rounded-xl overflow-hidden bg-gray-900 shadow-inner border border-white/5">
                   {zones.map((val, i) => {
-                    const width = totalMin > 0 ? (parseInt(val) / totalMin) * 100 : 0;
-                    return width > 0 ? (
-                      <div key={i} style={{ width: `${width}%` }} className={`${zoneColors[i]} h-full transition-all flex items-center justify-center text-[9px] font-black text-black/50`}>
-                        {parseInt(val) > 5 ? zoneLabels[i] : ""}
+                    const mins = Math.floor(Number(val)) || 0;
+                    if (mins <= 0) return null; // Полное удаление пустой зоны
+
+                    const width = totalMin > 0 ? (mins / totalMin) * 100 : 0;
+                    if (width <= 0) return null;
+
+                    return (
+                      <div
+                        key={`bar-${i}`}
+                        style={{ width: `${width}%` }}
+                        className={`${zoneColors[i]} h-full transition-all flex items-center justify-center text-[9px] font-black text-black/40 border-r border-black/5 last:border-r-0`}
+                      >
+                        {width > 12 ? zoneLabels[i] : ""}
                       </div>
-                    ) : null;
+                    );
                   })}
                 </div>
                 <div className="grid grid-cols-5 gap-2 px-1">
-                  {zones.map((val, i) => (
-                    <div key={i} className="text-center">
-                      <div className={`w-1.5 h-1.5 rounded-full ${zoneColors[i]} mx-auto mb-1`}></div>
-                      <div className="text-[10px] font-bold text-gray-300">{val}м</div>
-                    </div>
-                  ))}
+                  {zones.map((val, i) => {
+                    const isZero = (Math.floor(Number(val)) || 0) <= 0;
+                    return (
+                      <div key={`info-${i}`} className="text-center">
+                        <div className={`w-1.5 h-1.5 rounded-full ${zoneColors[i]} mx-auto mb-1 ${isZero ? 'opacity-10' : 'opacity-100'}`}></div>
+                        <div className={`text-[10px] font-bold ${isZero ? 'text-gray-700' : 'text-gray-300'}`}>
+                          {Math.floor(Number(val)) || 0}м
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -293,13 +309,14 @@ export default function EditWorkoutModal({ workoutId, mode, isOpen, onClose, onS
           <div className="flex justify-end gap-3 mt-10 pt-6 border-t border-gray-800">
              <button onClick={onClose} className="px-6 py-3 bg-[#2a2a2d] text-gray-400 rounded-xl hover:bg-[#323235] font-bold text-xs uppercase tracking-widest">Закрыть</button>
              {isEditing && (
-               <button onClick={handleSave} className="bg-blue-600 px-10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+               <button onClick={handleSave} className="bg-blue-600 px-10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
                  <Check size={16}/> Сохранить
                </button>
              )}
           </div>
         </div>
       </Dialog.Panel>
+      <style>{`.no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } .scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
     </Dialog>
   );
 }

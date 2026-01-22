@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import {
   BarChart3, ClipboardList, CalendarDays, LogOut, User, Trophy, Heart, Edit3,
-  Activity, Loader2, Check, Trash2, Timer, Pencil, ShieldCheck, X, Users, Plus
+  Activity, Loader2, Check, Trash2, Timer, Pencil, ShieldCheck, Plus, Users
 } from "lucide-react";
 
 import EditAccountModal from "../components/AccountPage/EditAccountModalMobile";
@@ -21,6 +21,45 @@ const SectionLabel = ({ icon: Icon, title, color = "text-blue-500" }: any) => (
   </div>
 );
 
+// Функция сжатия полотна оригинала
+const compressOriginal = (imageSrc: string): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject();
+
+      const maxSide = 1600;
+      let width = image.width;
+      let height = image.height;
+
+      if (width > height) {
+        if (width > maxSide) {
+          height *= maxSide / width;
+          width = maxSide;
+        }
+      } else {
+        if (height > maxSide) {
+          width *= maxSide / height;
+          height = maxSide;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return reject();
+        resolve(blob);
+      }, 'image/jpeg', 0.85);
+    };
+    image.onerror = (e) => reject(e);
+  });
+};
+
 export default function AccountPageMobile() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +72,6 @@ export default function AccountPageMobile() {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
 
   const [imageForCrop, setImageForCrop] = useState<string | null>(null);
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
@@ -45,7 +83,7 @@ export default function AccountPageMobile() {
       const data = await getUserProfile();
       setProfile(data);
     } catch (err) {
-      if (err instanceof Error && (err.message.includes("401"))) {
+      if (err instanceof Error && err.message.includes("401")) {
         localStorage.removeItem("token");
         navigate('/login');
       }
@@ -56,29 +94,44 @@ export default function AccountPageMobile() {
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setOriginalFile(file);
       setImageForCrop(URL.createObjectURL(file));
       setShowAvatarMenu(false);
     }
   };
 
-  const onCropComplete = useCallback((_area: any, pixels: any) => {
-    setCroppedAreaPixels(pixels);
-  }, []);
-
   const handleUploadCroppedImage = async () => {
-    if (!originalFile || !croppedAreaPixels) return;
+    if (!imageForCrop || !croppedAreaPixels || uploading) return;
     setUploading(true);
+    
     try {
+      // 1. Получаем размеры исходника
+      const img = new Image();
+      img.src = imageForCrop;
+      await new Promise((res) => (img.onload = res));
+
+      // 2. Сжимаем оригинал
+      const compressedBlob = await compressOriginal(imageForCrop);
+      
+      // 3. Получаем размеры сжатого фото для расчета коэффициента (scale)
+      const compressedUrl = URL.createObjectURL(compressedBlob);
+      const compressedImg = new Image();
+      compressedImg.src = compressedUrl;
+      await new Promise((res) => (compressedImg.onload = res));
+
+      const scaleX = compressedImg.width / img.width;
+      const scaleY = compressedImg.height / img.height;
+
       const formData = new FormData();
-      formData.append("avatar", originalFile);
-      formData.append("cropX", Math.round(croppedAreaPixels.x).toString());
-      formData.append("cropY", Math.round(croppedAreaPixels.y).toString());
-      formData.append("cropWidth", Math.round(croppedAreaPixels.width).toString());
-      formData.append("cropHeight", Math.round(croppedAreaPixels.height).toString());
+      formData.append("avatar", compressedBlob, "avatar.jpg");
+      
+      // Корректируем координаты под новый размер картинки
+      formData.append("cropX", Math.round(croppedAreaPixels.x * scaleX).toString());
+      formData.append("cropY", Math.round(croppedAreaPixels.y * scaleY).toString());
+      formData.append("cropWidth", Math.round(croppedAreaPixels.width * scaleX).toString());
+      formData.append("cropHeight", Math.round(croppedAreaPixels.height * scaleY).toString());
 
       const token = localStorage.getItem("token");
       const response = await fetch(`${BASE_URL}/api/user/upload-avatar`, {
@@ -87,25 +140,40 @@ export default function AccountPageMobile() {
         body: formData
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data.user);
-        setImageForCrop(null);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Ошибка сервера при сохранении");
       }
-    } catch (err) { console.error(err); } finally { setUploading(false); }
+
+      setProfile(data.user);
+      URL.revokeObjectURL(imageForCrop);
+      URL.revokeObjectURL(compressedUrl);
+      setImageForCrop(null);
+      
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      alert(err.message || "Не удалось загрузить фото");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDeleteAvatar = async () => {
     setShowAvatarMenu(false);
     if (!window.confirm("Удалить фото профиля?")) return;
     try {
+      setUploading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch(`${BASE_URL}/api/user/avatar`, {
+      const response = await fetch(`${BASE_URL}/api/profile/delete-avatar`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      if (response.ok) fetchProfile();
-    } catch (err) { console.error(err); }
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data.user);
+      }
+    } catch (err) { console.error(err); } finally { setUploading(false); }
   };
 
   const hrZonesData = [
@@ -132,11 +200,11 @@ export default function AccountPageMobile() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-gray-200 pb-32 font-sans overflow-x-hidden">
-
+      
       {/* HEADER */}
       <div className="sticky top-0 z-40 bg-[#0a0a0b]/95 backdrop-blur-md border-b border-white/[0.03] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden border border-white/10 shrink-0 shadow-lg">
+          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} className="w-full h-full object-cover" alt="avatar" />
             ) : (
@@ -154,16 +222,14 @@ export default function AccountPageMobile() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* 1. ПРОФИЛЬ */}
+        {/* ПРОФИЛЬ */}
         <section>
           <SectionLabel icon={User} title="Профиль спортсмена" />
-          <div className="bg-[#131316] border border-white/[0.03] rounded-[32px] p-8 shadow-2xl relative overflow-hidden flex flex-col items-center">
-            <button onClick={() => setIsModalOpen(true)} className="absolute top-6 right-6 text-white/10 active:text-blue-500 transition-colors">
+          <div className="bg-[#131316] border border-white/[0.03] rounded-[32px] p-8 shadow-2xl relative flex flex-col items-center">
+            <button onClick={() => setIsModalOpen(true)} className="absolute top-6 right-6 text-white/10 active:text-blue-500">
               <Edit3 size={18} />
             </button>
-
-            <div className="relative mb-6 cursor-pointer active:scale-95 transition-transform" onClick={() => setShowAvatarMenu(true)}>
-              <div className="absolute inset-0 bg-blue-500/5 blur-[40px] rounded-full" />
+            <div className="relative mb-6 cursor-pointer" onClick={() => setShowAvatarMenu(true)}>
               <div className="w-32 h-32 rounded-[40px] overflow-hidden border-2 border-white/5 bg-[#1a1a1e] relative z-10 shadow-2xl">
                 {profile?.avatarUrl ? (
                   <img src={profile.avatarUrl} className="w-full h-full object-cover" alt="avatar" />
@@ -177,53 +243,46 @@ export default function AccountPageMobile() {
                 )}
               </div>
             </div>
-
             <div className="text-center">
-              <h2 className="text-xl font-black text-white tracking-tight mb-1">
-                {profile?.name}
-              </h2>
-              <p className="text-[8px] font-bold text-blue-500/70 uppercase tracking-[0.3em]">
-                {profile?.profile?.sportType || "Атлет"}
-              </p>
+              <h2 className="text-xl font-black text-white mb-1">{profile?.name}</h2>
+              <p className="text-[8px] font-bold text-blue-500/70 uppercase tracking-[0.3em]">{profile?.profile?.sportType || "Атлет"}</p>
             </div>
           </div>
         </section>
 
-        {/* 2. БИОГРАФИЯ */}
+        {/* БИОГРАФИЯ */}
         <section>
           <SectionLabel icon={ClipboardList} title="Биография" />
-          <div className="bg-[#131316] border border-white/[0.03] rounded-[24px] p-6 shadow-xl">
-             <p className="text-[11px] text-gray-400 leading-relaxed italic">
-               {profile?.profile?.bio || "Биография еще не заполнена."}
-             </p>
+          <div className="bg-[#131316] border border-white/[0.03] rounded-[24px] p-6">
+             <p className="text-[11px] text-gray-400 leading-relaxed italic">{profile?.profile?.bio || "Биография не заполнена."}</p>
           </div>
         </section>
 
-        {/* 3. СТАТУС */}
+        {/* СПОРТИВНЫЙ СТАТУС */}
         <section>
           <SectionLabel icon={Trophy} title="Спортивный статус" />
-          <div className="bg-[#131316] rounded-[28px] border border-white/[0.03] p-5 shadow-xl space-y-4">
+          <div className="bg-[#131316] rounded-[28px] border border-white/[0.03] p-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.03]">
-                <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest mb-1">Клуб</p>
-                <p className="text-white text-[10px] font-bold truncate tracking-tight">{profile?.profile?.club || "—"}</p>
+                <p className="text-gray-600 text-[8px] font-black uppercase mb-1">Клуб</p>
+                <p className="text-white text-[10px] font-bold truncate">{profile?.profile?.club || "—"}</p>
               </div>
               <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.03]">
-                <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest mb-1">Пол</p>
-                <p className="text-white text-[10px] font-bold tracking-tight">{profile?.profile?.gender || "—"}</p>
+                <p className="text-gray-600 text-[8px] font-black uppercase mb-1">Пол</p>
+                <p className="text-white text-[10px] font-bold">{profile?.profile?.gender || "—"}</p>
               </div>
             </div>
             <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10 flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg shrink-0"><ShieldCheck size={16} className="text-blue-500" /></div>
+              <div className="p-2 bg-blue-500/10 rounded-lg"><ShieldCheck size={16} className="text-blue-500" /></div>
               <div>
-                <p className="text-gray-500 text-[8px] font-black uppercase tracking-widest">Ассоциация / Федерация</p>
-                <p className="text-white text-[11px] font-bold tracking-tight">{profile?.profile?.association || "Личный зачет"}</p>
+                <p className="text-gray-500 text-[8px] font-black uppercase">Ассоциация / Федерация</p>
+                <p className="text-white text-[11px] font-bold">{profile?.profile?.association || "Личный зачет"}</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 4. ЧСС */}
+        {/* ПУЛЬСОВЫЕ ЗОНЫ */}
         <section>
           <SectionLabel icon={Heart} title="Пульсовые зоны" color="text-red-500" />
           <div className="bg-[#131316] border border-white/[0.03] rounded-[24px] p-5">
@@ -239,100 +298,51 @@ export default function AccountPageMobile() {
           </div>
         </section>
 
-        {/* 5. ТРЕНЕРЫ */}
+        {/* ТРЕНЕРЫ */}
         <section>
           <SectionLabel icon={Users} title="Тренерский штаб" />
           <div className="bg-white/[0.01] border border-dashed border-white/10 p-8 rounded-[24px] text-center">
             <p className="text-[9px] text-gray-500 italic mb-4 font-medium">Нет привязанных тренеров</p>
-            <button className="inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/5 active:bg-blue-500/10 px-5 py-2.5 rounded-xl text-[9px] text-blue-400 font-black uppercase tracking-[0.15em] transition-all">
+            <button className="inline-flex items-center gap-2 border border-blue-500/20 bg-blue-500/5 px-5 py-2.5 rounded-xl text-[9px] text-blue-400 font-black uppercase">
               <Plus size={12} /> Добавить
             </button>
           </div>
         </section>
       </div>
 
-      {/* КОМПАКТНАЯ ШТОРКА МЕНЮ ФОТО */}
+      {/* МЕНЮ ФОТО */}
       <Transition show={showAvatarMenu} as={Fragment}>
         <Dialog onClose={() => setShowAvatarMenu(false)} className="relative z-[100]">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-          >
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
-          </Transition.Child>
-
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
           <div className="fixed inset-0 flex items-end justify-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-400 cubic-bezier(0.32, 0.72, 0, 1)"
-              enterFrom="translate-y-full"
-              enterTo="translate-y-0"
-              leave="ease-in duration-300"
-              leaveFrom="translate-y-0"
-              leaveTo="translate-y-full"
-            >
-              <Dialog.Panel className="w-full bg-[#16161a] rounded-t-[32px] border-t border-white/10 overflow-hidden pb-8 shadow-2xl">
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-white/10" />
-                </div>
-
-                <div className="px-6 pt-4">
-                  <div className="flex items-center gap-2 mb-5">
-                    <div className="w-1 h-3 bg-blue-500 rounded-full" />
-                    <Dialog.Title className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                      Фото профиля
-                    </Dialog.Title>
-                  </div>
-
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 active:scale-[0.98] transition-all group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Pencil size={18} />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[13px] font-bold text-white">Обновить фото</p>
-                        <p className="text-[10px] text-gray-500">Выбрать из галереи</p>
-                      </div>
-                    </button>
-
-                    {profile?.avatarUrl && (
-                      <button
-                        onClick={handleDeleteAvatar}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 active:scale-[0.98] transition-all"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
-                          <Trash2 size={18} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-[13px] font-bold text-red-400">Удалить</p>
-                          <p className="text-[10px] text-red-500/50">Вернуть стандартный аватар</p>
-                        </div>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
+            <Dialog.Panel className="w-full bg-[#16161a] rounded-t-[32px] border-t border-white/10 pb-8">
+              <div className="px-6 pt-8 space-y-3">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 active:scale-[0.98]">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500"><Pencil size={18} /></div>
+                  <div className="text-left"><p className="text-[13px] font-bold text-white">Обновить фото</p></div>
+                </button>
+                {profile?.avatarUrl && (
+                  <button type="button" onClick={handleDeleteAvatar} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 active:scale-[0.98]">
+                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500"><Trash2 size={18} /></div>
+                    <div className="text-left"><p className="text-[13px] font-bold text-red-400">Удалить</p></div>
+                  </button>
+                )}
+              </div>
+            </Dialog.Panel>
           </div>
         </Dialog>
       </Transition>
 
       <input type="file" ref={fileInputRef} onChange={onFileChange} className="hidden" accept="image/*" />
 
-      {/* NAVIGATION BAR */}
+      {/* НИЖНЕЕ МЕНЮ */}
       <div className="fixed bottom-4 left-4 right-4 z-50">
-        <div className="bg-[#131316]/95 backdrop-blur-md border border-white/10 p-1 rounded-2xl flex justify-around shadow-2xl">
+        <div className="bg-[#131316]/95 backdrop-blur-md border border-white/10 p-1 rounded-xl flex justify-around">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
-              <button key={item.path} onClick={() => navigate(item.path)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 rounded-xl transition-all ${isActive ? "bg-blue-600/10 text-blue-500" : "text-gray-600"}`}>
+              <button key={item.path} onClick={() => navigate(item.path)} className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg transition-all ${isActive ? "bg-blue-600/10 text-blue-500" : "text-gray-600"}`}>
                 <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[7px] font-black uppercase tracking-tighter">{item.label}</span>
               </button>
@@ -343,14 +353,15 @@ export default function AccountPageMobile() {
 
       {/* CROPPER */}
       {imageForCrop && (
-        <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-4">
           <div className="relative w-full max-w-lg aspect-square bg-[#131316] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <Cropper image={imageForCrop} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
+            <Cropper image={imageForCrop} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onCropComplete={(a, p) => setCroppedAreaPixels(p)} onZoomChange={setZoom} />
           </div>
           <div className="mt-8 flex gap-4 w-full max-w-lg">
-            <button onClick={() => { setImageForCrop(null); setOriginalFile(null); }} className="flex-1 bg-white/5 text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl">Отмена</button>
-            <button onClick={handleUploadCroppedImage} className="flex-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2">
-              <Check size={14} strokeWidth={3} /> Сохранить
+            <button onClick={() => setImageForCrop(null)} className="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase">Отмена</button>
+            <button onClick={handleUploadCroppedImage} disabled={uploading} className="flex-1 bg-blue-600 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check size={14} />}
+              {uploading ? "Загрузка..." : "Сохранить"}
             </button>
           </div>
         </div>

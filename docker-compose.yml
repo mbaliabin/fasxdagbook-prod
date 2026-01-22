@@ -4,10 +4,12 @@ services:
     image: postgres:17
     container_name: dagbook-db
     restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_USER: fasx_user
-      POSTGRES_PASSWORD: 199510Ma%
-      POSTGRES_DB: fasx
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
 
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -18,7 +20,7 @@ services:
     restart: always
     container_name: dagbook-backend
     ports:
-      - "5000:5000"
+    - "5000:5000"
     env_file:
       - ./fasx-backend/.env
     # Мы убрали DATABASE_URL отсюда, теперь он будет браться ТОЛЬКО из .env

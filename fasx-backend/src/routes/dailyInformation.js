@@ -15,7 +15,34 @@ function getDayRange(dateStr) {
   return { startOfDay, endOfDay };
 }
 
-// POST /api/daily-information — создать или обновить запись состояния
+// 1. GET /api/daily-information/range — получить записи за диапазон дат (Добавлено)
+router.get("/range", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { start, end } = req.query;
+
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!start || !end) return res.status(400).json({ error: "Missing start or end date" });
+
+    const entries = await prisma.dailyInformation.findMany({
+      where: {
+        userId,
+        date: {
+          gte: new Date(start),
+          lte: new Date(end),
+        },
+      },
+      orderBy: { date: 'asc' }
+    });
+
+    res.json(entries);
+  } catch (err) {
+    console.error("Error fetching range information:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. POST /api/daily-information — создать или обновить запись состояния
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -30,7 +57,6 @@ router.post("/", authenticateToken, async (req, res) => {
 
     const { startOfDay, endOfDay } = getDayRange(date);
 
-    // Проверяем, есть ли уже запись на эту дату
     let entry = await prisma.dailyInformation.findFirst({
       where: {
         userId,
@@ -39,7 +65,6 @@ router.post("/", authenticateToken, async (req, res) => {
     });
 
     if (entry) {
-      // Обновляем существующую запись
       entry = await prisma.dailyInformation.update({
         where: { id: entry.id },
         data: {
@@ -53,7 +78,6 @@ router.post("/", authenticateToken, async (req, res) => {
         },
       });
     } else {
-      // Создаём новую запись
       entry = await prisma.dailyInformation.create({
         data: {
           userId,
@@ -76,7 +100,7 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/daily-information?date=YYYY-MM-DD — получить запись состояния по дате
+// 3. GET /api/daily-information?date=YYYY-MM-DD — получить запись состояния по одной дате
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;

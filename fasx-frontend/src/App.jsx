@@ -1,30 +1,62 @@
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
+import { ProtectedRoute } from "./components/ProtectedRoute"
+
 import HomePage from "@/pages/HomePage"
 import ProfilePageWrapper from "@/pages/ProfilePageWrapper"
-// ВОТ ЭТОЙ СТРОЧКИ У ТЕБЯ СЕЙЧАС НЕТ ИЛИ ОНА НЕПРАВИЛЬНАЯ:
 import CalendarPageWrapper from "@/pages/CalendarPageWrapper"
-
-import FasxLogin from "@/pages/FasxLogin"
-import FasxRegister from "@/pages/FasxRegister"
 import DailyParametersWrapper from "@/pages/DailyParametersWrapper"
 import StatisticsPageWrapper from "@/pages/StatisticsPageWrapper"
 import AccountPageWrapper from "@/pages/AccountPageWrapper"
 
+import FasxLogin from "@/pages/FasxLogin"
+import FasxRegister from "@/pages/FasxRegister"
+import PlanningStub from "@/pages/PlanningStub" // Наша новая заглушка
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<FasxLogin />} />
-      <Route path="/profile" element={<ProfilePageWrapper />} />
-
-      {/* Теперь эта строка будет работать */}
-      <Route path="/calendar" element={<CalendarPageWrapper />} />
-
+      {/* 1. ПУБЛИЧНЫЕ РОУТЫ */}
       <Route path="/login" element={<FasxLogin />} />
       <Route path="/register" element={<FasxRegister />} />
-      <Route path="/daily" element={<DailyParametersWrapper />} />
-      <Route path="/statistics" element={<StatisticsPageWrapper />} />
-      <Route path="/account" element={<AccountPageWrapper />} />
+      
+      {/* Редирект с корня */}
+      <Route path="/" element={<Navigate to="/daily" replace />} />
+
+      {/* 2. ЗАЩИЩЕННЫЕ РОУТЫ (Всегда внутри ProtectedRoute) */}
+      <Route 
+        path="/profile" 
+        element={<ProtectedRoute><ProfilePageWrapper /></ProtectedRoute>} 
+      />
+      
+      <Route 
+        path="/calendar" 
+        element={<ProtectedRoute><CalendarPageWrapper /></ProtectedRoute>} 
+      />
+      
+      <Route 
+        path="/daily" 
+        element={<ProtectedRoute><DailyParametersWrapper /></ProtectedRoute>} 
+      />
+      
+      <Route 
+        path="/statistics" 
+        element={<ProtectedRoute><StatisticsPageWrapper /></ProtectedRoute>} 
+      />
+      
+      <Route 
+        path="/account" 
+        element={<ProtectedRoute><AccountPageWrapper /></ProtectedRoute>} 
+      />
+
+      {/* Роут для планирования (теперь выше звездочки) */}
+      <Route 
+        path="/planning" 
+        element={<ProtectedRoute><PlanningStub /></ProtectedRoute>} 
+      />
+
+      {/* 3. ОБРАБОТКА НЕИЗВЕСТНЫХ ПУТЕЙ */}
+      {/* Этот роут ДОЛЖЕН быть последним */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }

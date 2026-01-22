@@ -44,7 +44,7 @@ export default function EditAccountModalMobile({ isOpen, onClose, profile, onUpd
     const updateData = { name: fullName, bio, gender, sportType, club, association, hrZones };
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://46.173.18.36:4000";
+      const baseUrl = import.meta.env.VITE_API_URL || "https://fasx.pro";
       const response = await fetch(`${baseUrl}/api/profile`, {
         method: "PUT",
         headers: {

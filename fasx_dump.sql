@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict hYPgzm6QlnHi2wUkNPhycHpdEsrY23L08NFlV8DqATb1xmxBkkzqkRz9RVGPo6G
+\restrict ksNx0nQV6dB5Nj6zNEpPfwmW27rgLW7zzBwxXO9CqrKAbz9M9dRWe4DmJwDZbeT
 
--- Dumped from database version 15.14 (Debian 15.14-1.pgdg12+1)
--- Dumped by pg_dump version 15.14 (Debian 15.14-1.pgdg12+1)
+-- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
+-- Dumped by pg_dump version 17.7 (Debian 17.7-3.pgdg13+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -19,16 +20,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: fasx_user
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO fasx_user;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: fasx_user
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
 --
 
 COMMENT ON SCHEMA public IS '';
@@ -94,7 +86,7 @@ CREATE SEQUENCE public."DailyInformation_id_seq"
     CACHE 1;
 
 
-ALTER TABLE public."DailyInformation_id_seq" OWNER TO fasx_user;
+ALTER SEQUENCE public."DailyInformation_id_seq" OWNER TO fasx_user;
 
 --
 -- Name: DailyInformation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: fasx_user
@@ -150,7 +142,8 @@ CREATE TABLE public."User" (
     "avatarUrl" text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "isVerified" boolean DEFAULT false NOT NULL,
-    "verificationToken" text
+    "verificationToken" text,
+    "originalAvatarUrl" text
 );
 
 
@@ -195,20 +188,22 @@ ALTER TABLE ONLY public."DailyInformation" ALTER COLUMN id SET DEFAULT nextval('
 --
 
 COPY public."DailyInformation" (id, "userId", date, main_param, physical, mental, sleep_quality, pulse, sleep_duration, comment, created_at) FROM stdin;
-1	cmc5e85an0000qq8ty9tz0rxl	2025-09-30 00:00:00	syk	10	10	10	80	07:30	test	2025-09-30 19:18:49.786
-4	cmc5e85an0000qq8ty9tz0rxl	2025-09-28 00:00:00	fridag	5	5	5	89	07:40	Test4	2025-10-01 13:05:51.318
-5	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 00:00:00	skadet	3	3	3	\N	\N	er	2025-10-01 13:12:44.598
-6	cmc5e85an0000qq8ty9tz0rxl	2025-09-25 00:00:00	skadet	5	3	5	90	09:30	test	2025-10-01 14:27:01.407
-7	cmc5e85an0000qq8ty9tz0rxl	2025-09-26 00:00:00	\N	4	3	0	70	\N	Test	2025-10-01 14:35:59.232
-8	cmc5e85an0000qq8ty9tz0rxl	2025-09-24 00:00:00	\N	3	2	0	75	\N	test9	2025-10-01 14:37:19.344
-3	cmc5e85an0000qq8ty9tz0rxl	2025-09-29 00:00:00	fridag	4	6	2	88	11:12	test 3	2025-10-01 13:03:17.61
-9	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 00:00:00	syk	3	3	6	100	11:00	test 20	2025-10-01 14:58:13.089
-2	cmc5e85an0000qq8ty9tz0rxl	2025-10-01 00:00:00	syk	3	3	8	70	08:30	Test 8	2025-10-01 07:47:04.2
-10	cmc5e85an0000qq8ty9tz0rxl	2025-10-02 00:00:00	fridag	5	6	3	90	09:00	Все круто	2025-10-01 21:29:48.951
-11	cmc5e85an0000qq8ty9tz0rxl	2025-11-20 00:00:00	fridag	6	0	6	60	07:30	\N	2025-11-20 19:28:17.251
-12	cmc5e85an0000qq8ty9tz0rxl	2025-12-10 00:00:00	skadet	5	5	7	70	07:30	Тест	2025-12-11 13:13:58.466
-13	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 00:00:00	paReise	6	6	6	60	07:20	Test	2025-12-15 17:39:18.788
-14	cmc5e85an0000qq8ty9tz0rxl	2025-12-16 00:00:00	syk	9	6	6	60	07:20	test	2025-12-16 15:11:51.855
+1	cmc5e85an0000qq8ty9tz0rxl	2025-10-09 00:00:00	paReise	3	2	9	90	08:45	test 1	2025-10-09 15:57:49.631
+2	cmc5e85an0000qq8ty9tz0rxl	2025-11-28 00:00:00	\N	1	1	1	55	04:20	Сегодня первая тренировка за две недели после болезни. Начнём с кросса и силовой, что бы немного взбодрить мышцы	2025-11-28 04:41:32.985
+3	cmc5e85an0000qq8ty9tz0rxl	2025-11-29 00:00:00	\N	4	6	0	65	07:00	Сегодня планирую покататься на лыжероллерах, на улице сыро, думаю будет тяжело. Пока начну с одного часа	2025-11-29 07:21:46.12
+4	cmc5e85an0000qq8ty9tz0rxl	2025-11-30 00:00:00	\N	6	8	0	56	08:00	Сегодня хорошо выспался, встал чуть позже. Чувствую себя более менее. Погода сухая, тренировку сделаю на роллерар коньковым стилем, попробую на полиуретановых колесах	2025-11-30 08:03:04.498
+5	cmc5e85an0000qq8ty9tz0rxl	2025-12-03 00:00:00	\N	6	4	6	62	06:00	\N	2025-12-04 04:02:29.458
+6	cmc5e85an0000qq8ty9tz0rxl	2025-12-01 00:00:00	fridag	0	0	0	\N	\N	\N	2025-12-04 04:03:09.576
+7	cmc5e85an0000qq8ty9tz0rxl	2025-12-04 00:00:00	\N	7	10	9	50	07:00	Сегодня впервые более менее поспал, состояние хорошее, планирую выйти на тренировку на роллерах коньковым стилем	2025-12-04 04:05:07.73
+9	cmc5e85an0000qq8ty9tz0rxl	2025-12-06 00:00:00	\N	8	8	10	56	07:00	Сегодня по дольше поспал, хорошо выспался. Планирую потренироваться сегодня 1,5 часа на роллерах	2025-12-06 06:55:35.251
+8	cmc5e85an0000qq8ty9tz0rxl	2025-12-05 00:00:00	\N	7	8	10	65	07:00	Хорошо выспался, готов тренироваться	2025-12-05 04:23:22.227
+10	cmc5e85an0000qq8ty9tz0rxl	2025-12-08 00:00:00	fridag	0	0	6	65	06:30	Сегодня решил сделать выходной	2025-12-08 05:05:23.301
+11	cmc5e85an0000qq8ty9tz0rxl	2025-12-07 00:00:00	\N	8	6	7	55	06:00	Плохой сон, встать было тяжело	2025-12-08 05:06:20.525
+12	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 00:00:00	syk	8	8	8	60	6:00	\N	2025-12-15 05:24:25.927
+13	cmc5e85an0000qq8ty9tz0rxl	2025-12-18 00:00:00	syk	5	6	7	67	06:00	Сегодня чувствую себя получше, решил выйти потренироваться после болезни	2025-12-18 05:55:06.81
+14	cmc5e85an0000qq8ty9tz0rxl	2025-12-19 00:00:00	\N	6	8	9	53	07:30	Сегодня получше выспался, чувствую себя утром лучше	2025-12-19 04:54:08.689
+15	cmc5e85an0000qq8ty9tz0rxl	2025-12-20 00:00:00	\N	6	5	0	63	07:00	С утра чуть выше пульс чувствуется недовосстановление, так как на предыдущей тренировки пульс был высоковат	2025-12-20 05:26:11.826
+16	cmc5e85an0000qq8ty9tz0rxl	2025-12-23 00:00:00	\N	9	9	9	\N	08:00	\N	2025-12-25 14:11:25.342
 \.
 
 
@@ -225,7 +220,6 @@ COPY public."Follow" (id, "followerId", "followingId", "createdAt") FROM stdin;
 --
 
 COPY public."Profile" (id, "userId", "fullName", bio, "createdAt", gender, "sportType", club, association, "hrZones", "updatedAt") FROM stdin;
-cmj8ptnj70001v1hxhagcmsxw	cmc5e85an0000qq8ty9tz0rxl	Максим	Биография t	2025-12-16 15:06:17.826	Мужчина	Лыжные гонки	Bivium	ФЛГР	{"I1": "120-150", "I2": "150-160", "I3": "161-170", "I4": "171-180", "I5": "181-190"}	2025-12-16 16:51:08.944
 \.
 
 
@@ -233,40 +227,13 @@ cmj8ptnj70001v1hxhagcmsxw	cmc5e85an0000qq8ty9tz0rxl	Максим	Биограф�
 -- Data for Name: User; Type: TABLE DATA; Schema: public; Owner: fasx_user
 --
 
-COPY public."User" (id, email, password, name, "avatarUrl", "createdAt", "isVerified", "verificationToken") FROM stdin;
-cmc5a4nra0000qql0ktipo3xt	test@gmail.com	$2b$10$pGFyCtlOeSvSKALxs4hsCuOhwutFo/CAnQajjjJIjBPCGzuQag1DK	test	\N	2025-06-20 20:45:42.598	f	\N
-cmc7s84qs0000qqpxmtq85jf2	maksim@gmail.com	$2b$10$IJNdNc06TVfcBvGTdhWmL.MDd601NyS5hhjTSN61ecuHy57QSIpW2	Максим	\N	2025-06-22 14:47:50.02	f	\N
-cmdc2p03p0000qq3nvjrtqni5	test@yandex.ru	$2b$10$DtxKnarwOhY7pW8EldQdsOAUp0uF7ahCRLfvhtuj3aSpmz0ilStfm	test	\N	2025-07-20 19:31:40.357	f	\N
-cmfllpbhj0000v1h5tbrg5hrj	test@mail.com	$2b$10$Oek.29olexyPOxfmIk4TbueiB.9Be87EC5VAELNjI6GjzcvQpbSfe	test1	\N	2025-09-15 20:53:08.071	f	\N
-cmflmegt10002v1modjcgdmq8	test3@mail.ru	$2b$10$srrbNbth/Ac5oFcUUK34WudkicrS..BD/qu/jDgggoomuwiC2qRsK	test3	\N	2025-09-15 21:12:41.365	f	\N
-cmflmhg840005v1moxwof6339	test4@mail.com	$2b$10$H8N4.wLrWXhGZ9vP/dyFPO8W1r.6NPUEt/Wd0c3HNntuhUNW6eJny	test4	\N	2025-09-15 21:15:00.581	f	\N
-cmfnqi2c60000v1wrs22t5ot3	test1709@mail.ru	$2b$10$b5LUsHpnVUeUDAafeUW96OzSJzyuMJdUZa4C5wlJ0HFBhF70cEt5.	test	\N	2025-09-17 08:43:00.055	f	\N
-cmgcfu9ws0000v1sdamjju060	test2@mail.ru	$2b$10$xL41x2U/UU20YRaBSNzkCuHtRMMMOGjw6Qvog6uXcW/lMgHeWA1xO	test1	\N	2025-10-04 15:38:48.365	f	22667b408d7e693ce042e59b1585eb5c26540d5257195eb92e99d1eaadaed752
-cmgcfwzgf0000v1u6zihvfya2	pep3@mail.ru	$2b$10$q7zImJBJpdCersV15xKa5.W9/JKJj50e16/xnaE99/S7xC9gzwLeq	test5	\N	2025-10-04 15:40:54.783	f	9f60cedda11413474bfa7bee3bd4fe6813df933fd151e4436ad881ba78333cd2
-cmgcfzvgi0000v1w6rhrorrlg	test6@mail.ru	$2b$10$nSFhGV/cHSZMoG4zcptNK.hduxjtfFTo.7xQrCMkTkds5/ZI/QMJu	test6	\N	2025-10-04 15:43:09.571	f	ff0ae2769c504d1d9a49968ec4fbb5421abf9b7b739ffe7f8feebafd672f51cb
-cmgcg5jm60000v1xs30858mio	test7@mail.ru	$2b$10$HzXKLhYuPteANjsTa8ZTHuZB7pt1lcsaUUoZYhQmA2imAEY8GnrP6	test6	\N	2025-10-04 15:47:34.158	f	98fc0e6895751a07169b0e806fc2aaed350a3a595d8b57fc45e141b6cb8b4024
-cmgcges670000v11ug58h882b	test8@mail.ru	$2b$10$G1w1H.8vTlMsKD.p.RQqFu/PuOpxLL2Lq7fMKdu/ZXIeJKC9G6Bw2	test7	\N	2025-10-04 15:54:45.151	f	6e2be5219269e54ac6c9af8686be6e35bb8d036f67777fda43cd407720d836fd
-cmgcgj5oq0000v13l3vm4v64o	test9@mail.ru	$2b$10$ghqY6n93sq5taQi7S613t.QCgvPHC7oQtpgFpYRRuHskfSwgFvle6	test9	\N	2025-10-04 15:58:09.29	f	2f884bff5c853a04b884a611cedefa12f9c6b1c70bfffbcfca50e5407441e226
-cmgcgmq240000v14z56vdwh38	test10@mail.ru	$2b$10$p05PX6glpkNHggV7bYXFbueeU8dcauyv5fj4Rof.iZcnbj8dq0OfW	test10	\N	2025-10-04 16:00:55.66	f	81c23e2a29fefdd22ff14e35e03952d71aa7aea1e3a510ea4da9fb986a81f3f4
-cmgcgvo0r0000v17fz1a7cdgx	test12@mail.ru	$2b$10$GRbeiCjgP1hGSyTHX5a9neX8gN/ZLjqMlrCXcEPC9HdyEUf3PzYU6	test12	\N	2025-10-04 16:07:52.924	f	919928e38617659e340f19dc5406c6d53cade2c438efee9cfd55501dff552fb1
-cmgckk4ir0000v1u752gi172i	test14@mail.ru	$2b$10$6ip1vy.Ygtf0Ygv2xRKq2uy5jsBEJ4mNLexTXCLCoeFswG5S0RjDW	test14	\N	2025-10-04 17:50:52.9	f	a34d976cdafb7224c9cc4beff022c0f4d225e7caaf4ce4cb18a3ca9f5c402e25
-cmgckppmy0000v1xsb9aibmay	test20@mail.ru	$2b$10$b9EKYjiPR03fHUA5p0Z4DeHANj.63PX.llKfLHp0KyiBh1fFFT6kC	test20	\N	2025-10-04 17:55:13.546	f	cddc887bd0e1d58a1feee1b78a48362586e954955706efcfacc1e576e23a3b60
-cmgcly1yj0000v1a38bkna3ec	test21@mail.ru	$2b$10$7JjhjwZyLNz1VqTdIzA5WuERqITfnpNeNXmJpQMsGqampUyHdjo.C	test20	\N	2025-10-04 18:29:42.38	f	f7faf90533f00d78c7f7427093a90d6108710b7003bd6aefd40dbfe7f42b4c3e
-cmgclyyj80000v1c8ezs1bazf	test22@mail.ru	$2b$10$dy/mKfwxmrxKvTjpDe/KB.bd2kdLliLpIkwijIWts.1OB5hTQA8aK	test22	\N	2025-10-04 18:30:24.596	f	93e9e28162482cce047ab59331c75561ea48eb73b33b04c82ee238679743a46e
-cmgcm3vpy0000v1epbp73t8qz	test23@mail.ru	$2b$10$uD3XQ823d92Vvm2.mJsXOOJSaJXmUl5jUYDYEc1KPKizSZ5SqrbeO	test23	\N	2025-10-04 18:34:14.23	f	293c12ec5ad10c7cb9b7b37a54cf873b99b1625dcec5184f06cb4c377fa19b60
-cmgcm7xcv0000v1ge0rhsjkre	test24@mail.ru	$2b$10$oRT6POP6zWFLQ4GiWISq1O5oGpYBqdSCxIwRQ0YBB/B7VEaoAa84i	test24	\N	2025-10-04 18:37:22.975	f	11f434f17538052323747e9fc265508b968336ea3d426223e5888dd852158363
-cmgcdja900000v10oeilvvbcy	none3	$2b$10$LFtIGBUf7Mc6HAtkY2/Gd.iW9XljuAbJy2HIxUK/oLjaAAraWilqC	testreg	\N	2025-10-04 14:34:16.356	f	\N
-cmgcf3ljb0000v1ixx4bptsva	none2	$2b$10$jzQpZqRKGE61mwcH4/9c2.Or1qVgborQygSJ2GdCBwu5N3UP6xs26	test	\N	2025-10-04 15:18:03.719	f	9319500ac1266af904f825eff846b40892a97fbca90c2f5136e9c4e34fd9a84d
-cmgcf7qyp0000v1knr3txpj8y	none1	$2b$10$8t1K1OKKDXpdG7WxIrlRSeSW7oSZKQ1YSL.IosCjssmzAOuZbOxFS	test	\N	2025-10-04 15:21:17.378	f	5eed0dee98bab5b3689c7446018cee21228cf779d7f4a12f972b24fb8a105a3b
-cmgcfnpxn0000v1pxayfm4b9m	none	$2b$10$o1YMbVDQHFLKQd/kWubRJupCAzQIymgBgWpDpPQaRFV0EI7k4QCEq	test	\N	2025-10-04 15:33:42.54	f	4637d91794a3e8d46d2fc836e0852ec5e691ca281a25c0eeb00d5a2eb9286587
-cmgcn4b0i0000v1r7sx2euacd	none4	$2b$10$OZM9H1V5diiyAvBKc.6aqOU8.bjXN0C.kI2KDZ0/qVjY5GpzqSiWq	maksimblj	\N	2025-10-04 19:02:33.666	f	a297e40affd79460d11a910f73c77201674daa84a6ea6b6fb820c20d56fb1369
-cmgcndfc20000v1uxavpdvyrq	none5	$2b$10$HN6CGIllLgj4nJVRFd6no.TObMucH2tfJIE0BVv9FQ/KAkuYGV8EG	maksimtest	\N	2025-10-04 19:09:39.17	f	eef3243b1933376cbdb9aae738f64309bd6b64de0a2662b6abd1739a9f6ab301
-cmgcnzo4r0001v1uxw987nf1a	none6	$2b$10$vi08R.To7kQwnOl2oJUTt.pR0jxv18NopmrudGPG1b5sgIW.izf5y	test25	\N	2025-10-04 19:26:57.003	f	735ea3487c748383cc154d9b61561f92c0f01c3b4bae028b5630930ab1f47984
-cmgcoassa0000v164ifq3p2x8	none7	$2b$10$4UV9eOeNCkqR1NksAuWr1.YMOpbvovUXwskGyE72Mr2Ap/EMPBToW	mxtest1	\N	2025-10-04 19:35:36.25	f	27afd5d7760f2419aa9a5ffbb19eaf4cf05054d2f7020364d117540dec9a173d
-cmgcofpgw0000v19l8kif3nmr	none8	$2b$10$jmp0efQ84YEQuHUN/uJAZun98WO7l1w/Fn/UDPeDGWyLrJgMRw/pq	mxtest2	\N	2025-10-04 19:39:25.232	f	ca4f53eb46996e0eed61e9391a63d094cec7230e2bc3a8767091d0214e280434
-cmgcombf80000v1czzfxkhw2l	mb1@mail.ru	$2b$10$wPxRjoNMH/7UCmubuNlMrur5YFvGpMI9nYw/SB1aqZk0RpHMIAdFO	mbtest1	\N	2025-10-04 19:44:33.62	f	44ccb92e04fc6d5caefe50f5b3f83df977ee28c7f66a9e85a0c5fbf7b4a87755
-cmgcox4x00000v1ftw56qa211	mb2@mail.ru	$2b$10$ZaNqU8JKod94Uiql.kWGNeSjtiRSTu287bUgHuWH5V7QIf8whPs5G	mb2	\N	2025-10-04 19:52:58.404	f	1c187fcd85232dcc55a32f651af009d72cfe3d3651905a2e46fe32c1f9ceaf76
-cmc5e85an0000qq8ty9tz0rxl	baliabin.maksim@gmail.com	$2b$10$VIQRw5F1lgN2UhxXDsuuEeC1SoPfFnTeL6L..iEZoS3QjvCWi1xIy	Максим Балябин	\N	2025-06-20 22:40:23.759	f	\N
+COPY public."User" (id, email, password, name, "avatarUrl", "createdAt", "isVerified", "verificationToken", "originalAvatarUrl") FROM stdin;
+cmc5a4nra0000qql0ktipo3xt	test@gmail.com	$2b$10$pGFyCtlOeSvSKALxs4hsCuOhwutFo/CAnQajjjJIjBPCGzuQag1DK	test	\N	2025-06-20 20:45:42.598	f	\N	\N
+cmc7s84qs0000qqpxmtq85jf2	maksim@gmail.com	$2b$10$IJNdNc06TVfcBvGTdhWmL.MDd601NyS5hhjTSN61ecuHy57QSIpW2	Максим	\N	2025-06-22 14:47:50.02	f	\N	\N
+cmdc2p03p0000qq3nvjrtqni5	test@yandex.ru	$2b$10$DtxKnarwOhY7pW8EldQdsOAUp0uF7ahCRLfvhtuj3aSpmz0ilStfm	test	\N	2025-07-20 19:31:40.357	f	\N	\N
+cmflkyp110004o50j0527uijf	test1@mail.com	$2b$10$NqLCf3wnElix9NkGOgvpn.x8ctkh/KUKcQu5CUcYBl6v0tacTU3eS	Test1	\N	2025-09-15 20:32:25.909	f	\N	\N
+cmfll69980007o50j4tlzlr7h	test2@mail.com	$2b$10$qgxdrE7Hpy3H7gm8xAeDN.EgyEDKtGTdH9PTpCTo9irHoX2iYRdv6	test2	\N	2025-09-15 20:38:18.716	f	\N	\N
+cmc5e85an0000qq8ty9tz0rxl	baliabin.maksim@gmail.com	$2b$10$VIQRw5F1lgN2UhxXDsuuEeC1SoPfFnTeL6L..iEZoS3QjvCWi1xIy	Максим	https://s3.twcstorage.ru/49ffd73c-29437e7b-93fb-418e-8e49-2e57148af1b4/avatars/cmc5e85an0000qq8ty9tz0rxl-1766746667275-thumb.jpg	2025-06-20 22:40:23.759	f	\N	https://s3.twcstorage.ru/49ffd73c-29437e7b-93fb-418e-8e49-2e57148af1b4/avatars/cmc5e85an0000qq8ty9tz0rxl-1766746667275-full.jpg
 \.
 
 
@@ -346,14 +313,79 @@ cmf4gkict000dqql1cseljuq8	cmc5e85an0000qq8ty9tz0rxl	2025-09-03 20:57:20.608	15	5
 cmf4gm3n9000fqql1ppvqrzik	cmc5e85an0000qq8ty9tz0rxl	2025-09-03 20:58:34.869	15	60	2025-09-03 00:00:00	21	26	8	5	0	RollerSki_Classic	Rulleski klassisk		9	3	2025-09-03 20:58:34.869
 cmfjgm39r0003qquar0r096tv	cmc5e85an0000qq8ty9tz0rxl	2025-09-14 08:55:07.022	\N	35	2025-09-12 00:00:00	35	0	0	0	0	StrengthTraining	Силовая тренировка	Комплекс упражнений	10	9	2025-09-14 08:55:07.022
 cmfjgkpp00001qqua5ebd3sjb	cmc5e85an0000qq8ty9tz0rxl	2025-09-14 08:54:02.76	50	118	2025-09-13 00:00:00	0	0	0	15	103	RollerSki_Skate	Лыжероллеры свободный стиль	Соревнования по лыжероллерам, свободный стиль	10	6	2025-09-14 08:55:35.504
-cmflmgf4q0004v1moy1x6eosg	cmflmegt10002v1modjcgdmq8	2025-09-15 21:14:12.506	1	15	2025-09-16 00:00:00	15	0	0	0	0	RollerSki_Classic	test		7	6	2025-09-15 21:14:12.506
-cmj7j2x9i0001v1e0z8zo4o1f	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 19:09:46.853	25	45	2025-12-14 00:00:00	30	15	0	0	0	XC_Skiing_Skate	test	test	6	6	2025-12-15 19:09:46.853
-cmj7j3mdg0003v1e04aatk7qv	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 19:10:19.396	25	65	2025-12-14 00:00:00	65	0	0	0	0	RollerSki_Skate	test2	test	5	6	2025-12-15 19:10:19.396
-cmh3yi1ko0001v1s53g8exd1k	cmc5e85an0000qq8ty9tz0rxl	2025-10-23 21:50:57.144	1.9	15	2025-10-24 00:00:00	15	0	0	0	0	XC_Skiing_Skate	Test	Test	6	5	2025-10-23 21:50:57.144
-cmj1fuwrz0001v1bl7uwfi6s5	cmc5e85an0000qq8ty9tz0rxl	2025-12-11 12:52:57.071	12.1	14	2025-12-10 00:00:00	14	0	0	0	0	XC_Skiing_Classic	test		3	3	2025-12-11 13:05:30.548
-cmj7j4ngm0005v1e0df3fyege	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 19:11:07.461	25	75	2025-12-15 00:00:00	75	0	0	0	0	RollerSki_Classic	Ski	ski	6	5	2025-12-15 19:11:07.461
-cmj7k7vqd0007v1e0moqkd57t	cmc5e85an0000qq8ty9tz0rxl	2025-12-15 19:41:37.765	18	60	2025-12-14 00:00:00	0	60	0	0	0	XC_Skiing_Skate	test	test	7	5	2025-12-15 19:41:37.765
-cmj8x2jsv0001v1rn1iotky9o	cmc5e85an0000qq8ty9tz0rxl	2025-12-16 18:29:10.191	50.1	90	2025-12-16 00:00:00	50	20	15	2	3	XC_Skiing_Classic	Лыжи классический стиль	Тренировка прошла хорошо	7	6	2025-12-16 18:29:10.191
+cmfwxzwsp0003o50j3km38i9b	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:22:45.563	7.3	47	2025-09-15 00:00:00	18	22	6	1	0	Running	Беговая тренировка		8	6	2025-09-23 19:22:45.563
+cmfll1mzi0006o50jgx1u8p1i	cmflkyp110004o50j0527uijf	2025-09-15 20:34:43.229	3	15	2025-09-15 00:00:00	15	0	0	0	0	XC_Skiing_Classic	test	test	3	4	2025-09-15 20:34:43.229
+cmfwy0noa0005o50j5qbkw55j	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:23:20.41	\N	60	2025-09-15 00:00:00	60	0	0	0	0	StrengthTraining	Силовая тренировка		7	6	2025-09-23 19:23:20.41
+cmfwy6sco0007o50jax4xvl6h	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:28:06.398	6	40	2025-09-17 00:00:00	4	27	8	1	0	Running	Беговая тренировка		7	7	2025-09-23 19:28:06.398
+cmfwyc7tm0009o50jl0fmno6z	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:32:19.737	26.8	103	2025-09-18 00:00:00	25	34	35	7	2	RollerSki_Skate	Лыжероллеры свободным стилем		7	6	2025-09-23 19:32:19.737
+cmfwye30p000bo50j1qubar6m	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:33:46.816	5.6	35	2025-09-18 00:00:00	14	20	1	0	0	Running	Беговая тренировка		4	8	2025-09-23 19:33:46.816
+cmfwyhvdi000do50j1jn5j7lo	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:36:43.541	\N	16	2025-09-19 00:00:00	16	0	0	0	0	StrengthTraining	ХС		8	7	2025-09-23 19:36:43.541
+cmfwyjre0000fo50ji1wqwall	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:38:11.686	4.9	31	2025-09-19 00:00:00	6	25	0	0	0	Running	Беговая тренировка		8	6	2025-09-23 19:38:11.686
+cmfwykood000ho50j5dv91yga	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:38:54.817	\N	41	2025-09-19 00:00:00	41	0	0	0	0	StrengthTraining	Силовая тренировка		8	8	2025-09-23 19:38:54.817
+cmfwymjho000jo50jfngqoznd	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:40:21.419	22.1	85	2025-09-20 00:00:00	24	42	14	5	0	RollerSki_Classic	Лыжероллеры классическим стилем		8	6	2025-09-23 19:40:21.419
+cmfwyopie000lo50jigr2o9ui	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:42:02.533	18.6	63	2025-09-21 00:00:00	53	10	0	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		7	4	2025-09-23 19:42:02.533
+cmfwytwyo000no50japw24kjr	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:46:05.471	\N	60	2025-09-04 00:00:00	60	0	0	0	0	StrengthTraining	Силовая тренировка		7	7	2025-09-23 19:46:05.471
+cmhkkow1i0015sw0j8t5cb07z	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:56:26.934	\N	60	2025-10-28 00:00:00	60	0	0	0	0	StrengthTraining	Силовая тренировка		10	10	2025-11-04 12:56:26.934
+cmfwyvl9c000po50jdw74q76u	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:47:23.615	32.4	115	2025-09-06 00:00:00	33	68	11	3	0	RollerSki_Classic	Лыжероллеры классическим стилем		\N	6	2025-09-23 19:47:23.615
+cmfwyw98x000ro50jzt1iurct	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:47:54.704	\N	16	2025-09-08 00:00:00	16	0	0	0	0	StrengthTraining	ХС		8	6	2025-09-23 19:47:54.704
+cmfwyxx7f000to50jyw9pnl9c	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:49:12.41	11.2	40	2025-09-08 00:00:00	14	18	6	2	0	RollerSki_Skate	Лыжероллеры свободным стилем		6	7	2025-09-23 19:49:12.41
+cmfwyyob2000vo50jzrsxq6vd	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:49:47.524	\N	58	2025-09-08 00:00:00	58	0	0	0	0	StrengthTraining	Силовая тренировка		7	5	2025-09-23 19:49:47.524
+cmfwz0pje000xo50j51ooyjck	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:51:22.44	23.1	89	2025-09-09 00:00:00	14	43	29	3	0	RollerSki_Classic	Лыжероллеры классическим стилем		6	7	2025-09-23 19:51:22.44
+cmfwz3ju3000zo50jnbdzrfva	cmc5e85an0000qq8ty9tz0rxl	2025-09-23 19:53:35.017	12.5	98	2025-09-10 00:00:00	55	32	8	3	0	Running	Имитация с палками		7	6	2025-09-23 19:53:35.017
+cmfxu280i0011o50jjk4fet9f	cmc5e85an0000qq8ty9tz0rxl	2025-09-24 10:20:21.137	23.1	87	2025-09-24 00:00:00	2	30	26	29	0	RollerSki_Classic	Лыжероллеры классическим стилем	Утренняя тренировка, состояние тяжёлое, высоковатый пульс	8	2	2025-09-24 10:20:21.137
+cmg2pvooo0013o50j6g6asg6p	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 20:22:08.566	2.9	33	2025-09-25 00:00:00	33	0	0	0	0	Running	Беговая тренировка		7	1	2025-09-27 20:22:08.566
+cmg2px6nn0015o50jvezzbaef	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 20:23:18.514	9.3	35	2025-09-26 00:00:00	10	25	0	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		7	4	2025-09-27 20:23:18.514
+cmg2py3y40017o50jtt23uhrb	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 20:24:01.649	\N	56	2025-09-26 00:00:00	56	0	0	0	0	StrengthTraining	Силовая тренировка		10	4	2025-09-27 20:24:01.649
+cmg2pyya90019o50jhvbaxinn	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 20:24:40.975	3	20	2025-09-26 00:00:00	0	10	10	0	0	Running	Беговая тренировка 		8	2	2025-09-27 20:24:40.975
+cmg2q0f4t001bo50j5587ox1c	cmc5e85an0000qq8ty9tz0rxl	2025-09-27 20:25:49.468	9.1	59	2025-09-27 00:00:00	10	49	0	0	0	Running	Беговая тренировка		8	2	2025-09-27 20:25:49.468
+cmgdeshci0001o50iocxjntul	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 07:57:11.247	24.5	94	2025-09-27 00:00:00	18	54	20	2	0	RollerSki_Skate	Лыжероллеры свободным стилем		8	7	2025-10-05 07:57:11.247
+cmgdeuvf70003o50inxsyb0gt	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 07:59:02.801	13.8	60	2025-09-29 00:00:00	24	23	13	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		6	8	2025-10-05 07:59:02.801
+cmgdevp3p0005o50i2wtiycek	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 07:59:41.258	\N	60	2025-09-29 00:00:00	60	0	0	0	0	StrengthTraining	Силовая тренировка		7	7	2025-10-05 07:59:41.258
+cmgdf6gjz0009o50ipmxeou0c	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 08:08:03.392	11.7	40	2025-10-01 00:00:00	2	14	12	11	1	RollerSki_Skate	Лыжероллеры свободным стилем		7	6	2025-10-05 08:08:03.392
+cmgdf85t3000bo50i0qjbp27u	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 08:09:22.788	20.7	81	2025-10-02 00:00:00	38	40	3	0	0	RollerSki_Classic	Лыжероллеры классическим стилем		7	6	2025-10-05 08:09:22.788
+cmgdfagvo000fo50i48bcx799	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 08:11:10.45	\N	55	2025-10-04 00:00:00	55	0	0	0	0	StrengthTraining	Силовая тренировка		10	7	2025-10-05 08:11:10.45
+cmgdf9m2a000do50iov2oui6w	cmc5e85an0000qq8ty9tz0rxl	2025-10-05 08:10:30.511	18.2	65	2025-10-04 00:00:00	18	19	20	8	0	RollerSki_Skate	Лыжероллеры свободным стилем		8	3	2025-10-05 08:11:25.086
+cmgmjyyc50001sw0juhcv0jp3	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:32:06.863	7.5	50	2025-10-01 00:00:00	50	0	0	0	0	Running	Беговая тренировка		5	4	2025-10-11 17:32:06.863
+cmgmk2y9j0003sw0jxrkpoqo3	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:35:13.387	13.4	120	2025-10-05 00:00:00	59	42	15	4	0	Running	Бег с палками	Шаговая имитация с палками в подъем	10	7	2025-10-11 17:35:13.387
+cmgmk46hd0005sw0jlm5lafff	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:36:10.704	4.2	30	2025-10-07 00:00:00	30	0	0	0	0	Running	Беговая тренировка		6	4	2025-10-11 17:36:10.704
+cmgmk4qjh0007sw0j52l0v0v1	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:36:36.7	\N	30	2025-10-07 00:00:00	30	0	0	0	0	StrengthTraining	Силовая тренировка		10	7	2025-10-11 17:36:36.7
+cmgmk6kvx0009sw0j4d6jtyn4	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:38:02.684	14.1	57	2025-10-09 00:00:00	25	25	7	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		6	6	2025-10-11 17:38:02.684
+cmgmk7gvl000bsw0j0evewdub	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:38:44.143	\N	56	2025-10-10 00:00:00	56	0	0	0	0	StrengthTraining	Силовая тренировка		10	8	2025-10-11 17:39:14.345
+cmgmk8uzf000dsw0ja9fuauv7	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:39:49.081	\N	16	2025-10-10 00:00:00	16	0	0	0	0	StrengthTraining	XC тренажер		10	9	2025-10-11 17:39:49.081
+cmgmkboxn000fsw0j3vmu1yoy	cmc5e85an0000qq8ty9tz0rxl	2025-10-11 17:42:01.198	34	120	2025-10-11 00:00:00	13	56	43	8	0	RollerSki_Classic	Лыжероллеры классическим стилем	Double poling	10	7	2025-10-11 17:42:31.419
+cmhkk8wyn000hsw0j69w9lf22	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:44:01.63	32.4	121	2025-01-12 00:00:00	13	56	43	8	1	RollerSki_Skate	Лыжероллеры свободным стилем		10	10	2025-11-04 12:44:01.63
+cmhkkaihj000jsw0jagvvcgwv	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:45:16.183	32.4	117	2025-10-12 00:00:00	90	27	0	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		10	10	2025-11-04 12:45:16.183
+cmhkkb93z000lsw0j01nay8ne	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:45:50.686	\N	58	2025-10-14 00:00:00	58	0	0	0	0	StrengthTraining	Силовая тренировка		10	10	2025-11-04 12:45:50.686
+cmhkkdlnc000nsw0j58ss17ss	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:47:40.237	6.1	40	2025-10-15 00:00:00	40	0	0	0	0	Running	Беговая тренировка		10	10	2025-11-04 12:47:40.237
+cmhkkelch000psw0jtwwicszy	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:48:26.513	15	65	2025-10-16 00:00:00	42	23	0	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		10	8	2025-11-04 12:48:26.513
+cmhkkf52t000rsw0jo3b4hq5y	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:48:52.081	\N	16	2025-10-17 00:00:00	16	0	0	0	0	StrengthTraining	ХС		10	8	2025-11-04 12:48:52.081
+cmhkkfsod000tsw0jq70ovfpy	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:49:22.669	\N	57	2025-10-17 00:00:00	57	0	0	0	0	StrengthTraining	Силовая тренировка		10	10	2025-11-04 12:49:22.669
+cmhkkh20u000vsw0j0nf3hpwq	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:50:21.438	31.4	120	2025-10-18 00:00:00	10	35	25	44	6	RollerSki_Classic	Лыжероллеры классическим стилем		10	8	2025-11-04 12:50:21.438
+cmhkkiakd000xsw0jh92jxxaa	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:51:19.165	14	58	2025-10-19 00:00:00	25	25	8	0	0	RollerSki_Skate	Лыжероллеры свободным стилем		10	9	2025-11-04 12:51:19.165
+cmhkkl8t1000zsw0jcw6qp7y1	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:53:36.852	12.9	54	2025-10-23 00:00:00	9	21	19	5	0	RollerSki_Classic	Лыжероллеры классическим стилем		10	10	2025-11-04 12:53:36.852
+cmhkkmvm80011sw0j8q0yn24y	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:54:53.072	16	62	2025-10-25 00:00:00	12	14	16	18	2	RollerSki_Skate	Лыжероллеры свободным стилем		10	10	2025-11-04 12:54:53.072
+cmhkkoakd0013sw0jyk1dncis	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:55:59.101	15.1	67	2025-10-26 00:00:00	21	35	8	3	0	RollerSki_Classic	Лыжероллеры классическим стилем		10	8	2025-11-04 12:55:59.101
+cmhkkqie80017sw0jd3d6asq4	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:57:42.55	13.9	61	2025-10-30 00:00:00	12	30	15	4	0	RollerSki_Classic	Лыжероллеры классическим стилем		10	10	2025-11-04 12:57:42.55
+cmhkkrwyr0019sw0j9gshl0va	cmc5e85an0000qq8ty9tz0rxl	2025-11-04 12:58:48.098	13.8	62	2025-10-31 00:00:00	10	25	19	7	1	RollerSki_Skate	Лыжероллеры свободным стилем		10	10	2025-11-04 12:58:48.098
+cmiilzpx7001bsw0jl94oaf4t	cmc5e85an0000qq8ty9tz0rxl	2025-11-28 08:37:01.818	8.3	50	2025-11-28 00:00:00	22	28	0	0	0	Running	Беговая тренировка	Беговой тренажер	6	8	2025-11-28 08:37:01.818
+cmijyritp001dsw0j2ck9zoqw	cmc5e85an0000qq8ty9tz0rxl	2025-11-29 07:22:20.557	\N	10	2025-11-28 00:00:00	0	10	0	0	0	StrengthTraining	XC		10	7	2025-11-29 07:22:20.557
+cmilfr6fg001fsw0j32a3dynx	cmc5e85an0000qq8ty9tz0rxl	2025-11-30 08:05:44.129	15.1	62	2025-11-29 00:00:00	1	8	15	23	15	RollerSki_Skate	Лыжероллеры коньковым стилем	Катался на резине, после большого перерыва это не просто. Погода сырая, толкнуться ногами не получается, тренировка почти на руках.	10	7	2025-11-30 08:05:44.129
+cmiqx0lje001jsw0jhzlhp9ph	cmc5e85an0000qq8ty9tz0rxl	2025-12-04 04:07:47.97	16.1	64	2025-11-30 00:00:00	1	11	15	20	17	RollerSki_Skate	Лыжероллеры коньковым сиилем	Катался на тяжёлых роллерах, мышцы чувствовали себя уже лучше, но пульс все ещё тяжелый	10	6	2025-12-04 04:07:47.97
+cmiqx1gkq001lsw0jrtm8lgf5	cmc5e85an0000qq8ty9tz0rxl	2025-12-04 04:08:28.202	\N	10	2025-12-02 00:00:00	10	0	0	0	0	StrengthTraining	XC	Лыжный тренажер	10	9	2025-12-04 04:08:28.202
+cmiqx2jsr001nsw0jbzeizq3r	cmc5e85an0000qq8ty9tz0rxl	2025-12-04 04:09:19.035	\N	47	2025-12-02 00:00:00	47	0	0	0	0	StrengthTraining	Силовая тренировка	Упражнения	10	7	2025-12-04 04:09:19.035
+cmiqx3yax001psw0joi7gfbm9	cmc5e85an0000qq8ty9tz0rxl	2025-12-04 04:10:24.489	13.9	58	2025-12-03 00:00:00	10	42	6	0	0	RollerSki_Skate	Лыжероллеры коньковым стилем		8	7	2025-12-04 04:10:24.489
+cmisd2dmq001rsw0jjz5yuq0f	cmc5e85an0000qq8ty9tz0rxl	2025-12-05 04:24:51.074	13.7	63	2025-12-04 00:00:00	9	26	22	6	0	RollerSki_Classic	Лыжероллеры классическим стилем		8	7	2025-12-05 04:24:51.074
+cmitxym3y001tsw0jvw83ahby	cmc5e85an0000qq8ty9tz0rxl	2025-12-06 06:57:33.55	12.9	64	2025-12-05 00:00:00	24	30	10	0	0	RollerSki_Skate	Лыжероллеры коньковым стилем	Тренировался на тяжёлых роллерых, прогулочный темп	6	8	2025-12-06 06:57:33.55
+cmitxzmxd001vsw0j0r017xl7	cmc5e85an0000qq8ty9tz0rxl	2025-12-06 06:58:21.265	\N	54	2025-12-06 00:00:00	54	0	0	0	0	StrengthTraining	Силовая тренировка	Упражнения	10	9	2025-12-06 06:58:21.265
+cmiwozadv0001sw0jena4qc3j	cmc5e85an0000qq8ty9tz0rxl	2025-12-08 05:09:26.983	22.2	103	2025-12-06 00:00:00	34	50	17	2	0	RollerSki_Classic	Лыжероллеры классическим стилем	Было тяжеловато, пульс все ещё высоковатый	10	7	2025-12-08 05:09:26.983
+cmiwp1rsq0003sw0jr87mabzg	cmc5e85an0000qq8ty9tz0rxl	2025-12-08 05:11:22.872	23.2	104	2025-12-07 00:00:00	40	53	10	1	0	RollerSki_Skate	Лыжероллеры свободным стилем	Сегодня чувствовал себя получше, но вот пульс все ещё высокой, никак не восстановится. Тренировался на тяжёлых роллерах	3	8	2025-12-08 05:11:22.872
+cmiz1ijn20005sw0jxm5ntqnr	cmc5e85an0000qq8ty9tz0rxl	2025-12-09 20:35:53.198	\N	10	2025-12-09 00:00:00	0	10	0	0	0	StrengthTraining	ХС	Лыжный тренажер	10	8	2025-12-09 20:35:53.198
+cmiz1jhy70007sw0j65mikoqy	cmc5e85an0000qq8ty9tz0rxl	2025-12-09 20:36:37.661	\N	50	2025-12-09 00:00:00	50	0	0	0	0	StrengthTraining	Силовая тренировка	Силовые упражнения	10	9	2025-12-09 20:36:37.661
+cmjb15ypg0009sw0jra5qqd8v	cmc5e85an0000qq8ty9tz0rxl	2025-12-18 05:59:20.298	14.4	79	2025-12-10 00:00:00	7	43	22	7	0	XC_Skiing_Skate	Лыжи свободным стилем		9	5	2025-12-18 06:01:25.863
+cmjb17xc0000bsw0jscknlu28	cmc5e85an0000qq8ty9tz0rxl	2025-12-18 06:00:51.84	20	32	2025-12-11 00:00:00	3	16	10	3	0	XC_Skiing_Classic	Лыжи классическим стилем		9	6	2025-12-18 06:01:37.521
+cmjb1aab9000dsw0johavkt78	cmc5e85an0000qq8ty9tz0rxl	2025-12-18 06:02:41.972	16.8	92	2025-12-14 00:00:00	31	48	13	0	0	XC_Skiing_Skate	Лыжи свободным стилем		10	7	2025-12-18 06:02:41.972
+cmjdux8hh000fsw0jik3ps3e4	cmc5e85an0000qq8ty9tz0rxl	2025-12-20 05:27:53.909	21	91	2025-12-18 00:00:00	3	78	10	0	0	XC_Skiing_Skate	Лыжи свободным стилем		10	4	2025-12-20 05:27:53.909
+cmjduyvbn000hsw0jxsnrwchw	cmc5e85an0000qq8ty9tz0rxl	2025-12-20 05:29:10.162	19.3	90	2025-12-19 00:00:00	2	43	35	10	0	XC_Skiing_Classic	Лыжи классическим стилем		10	5	2025-12-20 05:29:10.162
 \.
 
 
@@ -361,7 +393,7 @@ cmj8x2jsv0001v1rn1iotky9o	cmc5e85an0000qq8ty9tz0rxl	2025-12-16 18:29:10.191	50.1
 -- Name: DailyInformation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: fasx_user
 --
 
-SELECT pg_catalog.setval('public."DailyInformation_id_seq"', 14, true);
+SELECT pg_catalog.setval('public."DailyInformation_id_seq"', 16, true);
 
 
 --
@@ -459,51 +491,15 @@ ALTER TABLE ONLY public."DailyInformation"
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: fasx_user
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
 --
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO mbaliabin_fsx_psql;
-
-
---
--- Name: TABLE "Follow"; Type: ACL; Schema: public; Owner: fasx_user
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public."Follow" TO mbaliabin_fsx_psql;
-
-
---
--- Name: TABLE "Profile"; Type: ACL; Schema: public; Owner: fasx_user
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public."Profile" TO mbaliabin_fsx_psql;
-
-
---
--- Name: TABLE "User"; Type: ACL; Schema: public; Owner: fasx_user
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,UPDATE ON TABLE public."User" TO mbaliabin_fsx_psql;
-
-
---
--- Name: TABLE "Workout"; Type: ACL; Schema: public; Owner: fasx_user
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public."Workout" TO mbaliabin_fsx_psql;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES  TO mbaliabin_fsx_psql;
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hYPgzm6QlnHi2wUkNPhycHpdEsrY23L08NFlV8DqATb1xmxBkkzqkRz9RVGPo6G
+\unrestrict ksNx0nQV6dB5Nj6zNEpPfwmW27rgLW7zzBwxXO9CqrKAbz9M9dRWe4DmJwDZbeT
 
